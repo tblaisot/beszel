@@ -12,6 +12,7 @@ import { RootDiskCharts, ExtraFsCharts } from "./system/charts/disk-charts"
 import { ZfsCharts } from "./system/charts/storage-pool-charts"
 import { BandwidthChart, ContainerNetworkChart } from "./system/charts/network-charts"
 import { TemperatureChart, FanChart, BatteryChart } from "./system/charts/sensor-charts"
+import { CpuFreqChart } from "@/fork/cpu-freq-chart"
 import { WiFiChart } from "./system/charts/wifi-chart"
 import { GpuPowerChart, GpuCharts } from "./system/charts/gpu-charts"
 import {
@@ -138,6 +139,8 @@ export default memo(function SystemDetail({ id }: { id: string }) {
 
 					<TemperatureChart {...coreProps} />
 
+					<CpuFreqChart {...coreProps} />
+
 					<FanChart {...coreProps} />
 
 					<BatteryChart system={system} {...coreProps} />
@@ -224,6 +227,7 @@ export default memo(function SystemDetail({ id }: { id: string }) {
 						<MemoryChart {...coreProps} />
 						<SwapChart chartData={chartData} grid={grid} dataEmpty={dataEmpty} systemStats={systemStats} />
 						<TemperatureChart {...coreProps} setPageBottomExtraMargin={setPageBottomExtraMargin} />
+						<CpuFreqChart {...coreProps} />
 						<FanChart {...coreProps} />
 						<BatteryChart system={system} {...coreProps} />
 						{pageBottomExtraMargin > 0 && <div style={{ marginBottom: pageBottomExtraMargin }}></div>}

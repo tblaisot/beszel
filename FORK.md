@@ -110,14 +110,15 @@ F1 to F5 are front-end heavy and nearly independent. Do them first. F9 is delibe
 - **Fans: nothing to fix.** The hardware exposes no `fan*_input` to Linux (no Super-I/O driver finds a chip, no BMC; the ACPI "Fan" cooling devices are on/off states, not RPM) and the agent's sandbox does not hide anything. Upstream's `agent/fans.go` is correct and simply has nothing to read, so the fork does nothing for fans on this host. An optional chart of the ACPI fan cooling state is not worth adding (always 0 here).
 - **CPU frequency is available** without privileges: per CPU `scaling_cur_freq` (kHz, varies with load) and `cpuinfo_avg_freq`; `cpuinfo_max_freq` for the ceiling. `cpuinfo_cur_freq` does not exist with `intel_pstate`, so it must not be required.
 
-**Change.**
-- Agent: read `/sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq` (fall back to `cpuinfo_avg_freq`), report the average and the maximum across CPUs in MHz as a new optional stats key, plus `cpuinfo_max_freq` as the ceiling. Linux only, stub elsewhere, omitted when cpufreq is absent (VMs, containers).
-- UI: one small chart on the system page, shown only when the data exists.
-- One sysfs read per CPU per collection, no goroutine.
+**Change (as built).**
+- **Agent:** `agent/fork_cpu_freq_linux.go` reads `scaling_cur_freq` of every `cpuN/cpufreq` (falling back to `cpuinfo_avg_freq`; never `cpuinfo_cur_freq`) and the largest `cpuinfo_max_freq`, and reports `[average MHz, highest core MHz, ceiling MHz]` as the new optional stats key `cf` (cbor key 43). Hosts without cpufreq (most VMs and containers) omit it. Non-Linux builds get a no-op stub. One sysfs read per CPU per collection, no goroutine.
+- **Hub:** longer records (10m and up) roll the key up with `internal/records/fork_cpu_freq.go`: average of the averages, peak of the peaks, latest ceiling; agents without the key do not drag the average down.
+- **UI:** a *CPU Frequency* line chart (average and highest core, shown in MHz or GHz) on the system page, only when data exists (`src/fork/cpu-freq-chart.tsx`).
+- Tested end to end with a real agent on a Linux dev machine (`[4261, 4426, 4800]` MHz) and a hub on a copy of the production DB; a system without cpufreq shows no chart.
 
-**Touchpoints.** `internal/entities/system/system.go` (one new field), the agent's system-stats collector (one call), `system.tsx` and `chart-data.ts` (chart). New `agent/fork_cpu_freq_linux.go`, `agent/fork_cpu_freq_other.go`, test with fake sysfs fixtures.
+**Touchpoints (upstream files).** `internal/entities/system/system.go` (one field), `agent/system.go` (one call), `internal/records/records.go` (three lines), `components/routes/system.tsx` (import and two elements, one per layout), `types.d.ts` (one field), `en.po`. New: the two agent files, `internal/records/fork_cpu_freq.go`, the chart, and tests with fake sysfs fixtures.
 
-**Done when.** The NAS system page shows a CPU frequency chart that follows load; a host without cpufreq shows no chart and no error.
+**Done when.** The NAS system page shows a CPU frequency chart that follows load; a host without cpufreq shows no chart and no error. (The NAS itself is covered by the host check above; the chart was verified with the dev machine's agent.)
 
 ## F6. "Needs attention" home view
 

@@ -279,6 +279,7 @@ func AverageSystemStatsSlice(records []system.Stats) system.Stats {
 	// accumulate cpu breakdown [user, system, iowait, steal, idle]
 	var cpuBreakdownSums []float64
 	tempCount := float64(0)
+	var cpuFreq cpuFreqAverager
 	var fanSums map[string]uint64
 	fanCount := uint64(0)
 	zfsPoolCounts := make(map[string]uint64)
@@ -382,6 +383,8 @@ func AverageSystemStatsSlice(records []system.Stats) system.Stats {
 				sum.Temperatures[key] += value
 			}
 		}
+
+		cpuFreq.add(stats.CpuFreq)
 
 		// Accumulate fan speeds
 		if stats.Fans != nil {
@@ -544,6 +547,8 @@ func AverageSystemStatsSlice(records []system.Stats) system.Stats {
 			sum.Temperatures[key] = twoDecimals(sum.Temperatures[key] / tempCount)
 		}
 	}
+
+	sum.CpuFreq = cpuFreq.result()
 
 	// Average fan speeds
 	if fanSums != nil && fanCount > 0 {

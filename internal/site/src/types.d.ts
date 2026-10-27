@@ -104,6 +104,8 @@ export interface SystemStats {
 	cpus?: number[]
 	/** load average */
 	la?: [number, number, number]
+	/** cpu frequency in MHz [average, highest core, ceiling] */
+	cf?: [number, number, number]
 	/** memory bytes [total, used, buffer + cache, zfs arc] */
 	mem?: [number, number, number, number]
 	/** max used memory (bytes) */
