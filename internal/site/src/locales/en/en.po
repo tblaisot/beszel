@@ -25,6 +25,12 @@ msgstr "{0} available"
 msgid "{0} of {1} row(s) selected."
 msgstr "{0} of {1} row(s) selected."
 
+#. placeholder {0}: overview.systemsUp
+#. placeholder {1}: overview.systemsTotal
+#: src/fork/attention-page.tsx
+msgid "{0} of {1} systems up"
+msgstr "{0} of {1} systems up"
+
 #. placeholder {0}: table.getFilteredRowModel().rows.length
 #: src/components/ui/data-table-pagination.tsx
 msgid "{0} row(s)"
@@ -71,6 +77,10 @@ msgstr "{diskName} I/O"
 #: src/components/systems-table/systems-table-columns.tsx
 msgid "{numFailed, plural, one {# failed service} other {# failed services}}"
 msgstr "{numFailed, plural, one {# failed service} other {# failed services}}"
+
+#: src/fork/attention-page.tsx
+msgid "{problems} need your attention"
+msgstr "{problems} need your attention"
 
 #: src/components/active-alerts.tsx
 msgid "{systemCount, plural, one {Across # system} other {Across # systems}}"
@@ -254,13 +264,13 @@ msgstr "Are you sure?"
 msgid "Automatic copy requires a secure context."
 msgstr "Automatic copy requires a secure context."
 
-#. Package version available to install
-#: src/components/routes/system/package-updates-table.tsx
+#: src/components/routes/system/storage-pools-table.tsx
+msgctxt "Disk space available"
 msgid "Available"
 msgstr "Available"
 
-#: src/components/routes/system/storage-pools-table.tsx
-msgctxt "Disk space available"
+#. Package version available to install
+#: src/components/routes/system/package-updates-table.tsx
 msgid "Available"
 msgstr "Available"
 
@@ -288,6 +298,10 @@ msgstr "Average exceeds <0>{value}{unitLabel}</0>"
 #: src/components/routes/system/disk-io-sheet.tsx
 msgid "Average number of I/O operations waiting to be serviced"
 msgstr "Average number of I/O operations waiting to be serviced"
+
+#: src/fork/attention-page.tsx
+msgid "average of monitors that are up"
+msgstr "average of monitors that are up"
 
 #: src/components/routes/system/charts/gpu-charts.tsx
 msgid "Average power consumption of GPUs"
@@ -595,6 +609,10 @@ msgstr "Container"
 msgid "Container Health"
 msgstr "Container Health"
 
+#: src/fork/attention-page.tsx
+msgid "container image updates available"
+msgstr "container image updates available"
+
 #: src/components/routes/system.tsx
 msgid "Containers"
 msgstr "Containers"
@@ -736,6 +754,10 @@ msgstr "Create account"
 #: src/components/alerts-history-columns.tsx
 msgid "Created"
 msgstr "Created"
+
+#: src/fork/attention-page.tsx
+msgid "Critical"
+msgstr "Critical"
 
 #: src/components/routes/settings/general.tsx
 msgid "Critical (%)"
@@ -978,6 +1000,10 @@ msgstr "Ephemeral"
 msgid "Error"
 msgstr "Error"
 
+#: src/fork/attention-page.tsx
+msgid "Everything is OK"
+msgstr "Everything is OK"
+
 #: src/components/routes/settings/heartbeat.tsx
 msgid "Example:"
 msgstr "Example:"
@@ -1213,6 +1239,10 @@ msgstr "Homebrew command"
 msgid "Host / IP"
 msgstr "Host / IP"
 
+#: src/fork/attention-page.tsx
+msgid "Hosts"
+msgstr "Hosts"
+
 #: src/components/routes/settings/heartbeat.tsx
 msgid "HTTP Method"
 msgstr "HTTP Method"
@@ -1263,6 +1293,10 @@ msgstr "Image update available"
 #: src/components/routes/settings/quiet-hours.tsx
 msgid "Inactive"
 msgstr "Inactive"
+
+#: src/fork/attention-page.tsx
+msgid "Info"
+msgstr "Info"
 
 #: src/components/network-monitors-table/network-monitors-columns.tsx
 #: src/components/network-monitors-table/network-monitors-columns.tsx
@@ -1326,6 +1360,7 @@ msgstr "Load state"
 
 #: src/components/systemd-table/systemd-table.tsx
 #: src/components/systemd-table/systemd-table.tsx
+#: src/fork/attention-page.tsx
 msgid "Loading..."
 msgstr "Loading..."
 
@@ -1397,6 +1432,7 @@ msgstr "Max 1h"
 #: src/components/systemd-table/systemd-table-columns.tsx
 #: src/components/systemd-table/systemd-table.tsx
 #: src/components/systems-table/systems-table-columns.tsx
+#: src/fork/attention-page.tsx
 #: src/fork/top-consumers.tsx
 msgid "Memory"
 msgstr "Memory"
@@ -1440,6 +1476,10 @@ msgstr "Model"
 msgid "Monitor"
 msgstr "Monitor"
 
+#: src/fork/attention-page.tsx
+msgid "Monitors"
+msgstr "Monitors"
+
 #: src/components/network-monitors-table/monitor-dialog.tsx
 msgid "Monitors created"
 msgstr "Monitors created"
@@ -1458,6 +1498,13 @@ msgstr "Mountpoint"
 #: src/components/systemd-table/systemd-table.tsx
 msgid "Name"
 msgstr "Name"
+
+#: src/fork/attention-nav.tsx
+#: src/fork/attention-nav.tsx
+#: src/fork/attention-page.tsx
+#: src/fork/attention-page.tsx
+msgid "Needs attention"
+msgstr "Needs attention"
 
 #: src/components/containers-table/containers-table-columns.tsx
 #: src/components/systems-table/systems-table-columns.tsx
@@ -1902,6 +1949,10 @@ msgstr "Resolved"
 msgid "Response"
 msgstr "Response"
 
+#: src/fork/attention-page.tsx
+msgid "Response time"
+msgstr "Response time"
+
 #: src/components/network-monitors-table/network-monitors-table.tsx
 msgid "Response time monitoring from agents."
 msgstr "Response time monitoring from agents."
@@ -2141,6 +2192,10 @@ msgstr "State"
 msgid "Status"
 msgstr "Status"
 
+#: src/fork/attention-page.tsx
+msgid "Storage pools"
+msgstr "Storage pools"
+
 #: src/components/systemd-table/systemd-table-columns.tsx
 msgid "Sub State"
 msgstr "Sub State"
@@ -2189,6 +2244,7 @@ msgstr "Systemd Services"
 #: src/components/navbar.tsx
 #: src/components/network-monitors-table/monitor-dialog.tsx
 #: src/components/network-monitors-table/monitor-dialog.tsx
+#: src/fork/attention-page.tsx
 msgid "Systems"
 msgstr "Systems"
 
@@ -2459,6 +2515,11 @@ msgstr "Unknown"
 msgid "Unlimited"
 msgstr "Unlimited"
 
+#: src/fork/attention-page.tsx
+#: src/fork/attention-page.tsx
+msgid "up"
+msgstr "up"
+
 #. Context: System is up
 #: src/components/routes/system/info-bar.tsx
 #: src/components/systems-table/systems-table-columns.tsx
@@ -2493,6 +2554,7 @@ msgstr "Updated every 10 minutes."
 
 #: src/components/routes/system.tsx
 #: src/components/systems-table/systems-table-columns.tsx
+#: src/fork/attention-page.tsx
 msgid "Updates"
 msgstr "Updates"
 
@@ -2591,6 +2653,10 @@ msgstr "Want to help improve our translations? Check <0>Crowdin</0> for details.
 #: src/components/systemd-table/systemd-table.tsx
 msgid "Wants"
 msgstr "Wants"
+
+#: src/fork/attention-page.tsx
+msgid "Warning"
+msgstr "Warning"
 
 #: src/components/routes/settings/general.tsx
 msgid "Warning (%)"

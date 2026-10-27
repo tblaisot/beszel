@@ -36,6 +36,7 @@ import { Logo } from "./logo"
 import { ModeToggle } from "./mode-toggle"
 import { $router, basePath, Link, navigate, prependBasePath } from "./router"
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
+import { AttentionMenuItem, AttentionNavLink } from "@/fork/attention-nav"
 
 const CommandPalette = lazy(() => import("./command-palette"))
 
@@ -95,6 +96,7 @@ export default function Navbar() {
 						<DropdownMenuLabel className="max-w-40 truncate">{pb.authStore.record?.email}</DropdownMenuLabel>
 						<DropdownMenuSeparator />
 						<DropdownMenuGroup>
+							<AttentionMenuItem />
 							<DropdownMenuItem
 								onClick={() => navigate(getPagePath($router, "containers"))}
 								className="flex items-center"
@@ -158,6 +160,7 @@ export default function Navbar() {
 				className="hidden md:flex items-center ms-auto"
 				onMouseEnter={() => import("@/components/routes/settings/general")}
 			>
+				<AttentionNavLink />
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<Link

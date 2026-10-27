@@ -29,6 +29,7 @@ import type { BeszelInfo, UpdateInfo } from "./types"
 const LoginPage = lazy(() => import("@/components/login/login.tsx"))
 const Home = lazy(() => import("@/components/routes/home.tsx"))
 const Containers = lazy(() => import("@/components/routes/containers.tsx"))
+const Attention = lazy(() => import("@/fork/attention-page.tsx"))
 const Smart = lazy(() => import("@/components/routes/smart.tsx"))
 const Monitors = lazy(() => import("@/components/routes/monitors.tsx"))
 const SystemDetail = lazy(() => import("@/components/routes/system.tsx"))
@@ -77,6 +78,8 @@ const App = memo(() => {
 		return <Home />
 	} else if (page.route === "system") {
 		return <SystemDetail id={page.params.id} />
+	} else if (page.route === "attention") {
+		return <Attention />
 	} else if (page.route === "containers") {
 		return <Containers />
 	} else if (page.route === "smart") {

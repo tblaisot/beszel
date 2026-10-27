@@ -211,6 +211,8 @@ func (h *Hub) registerApiRoutes(se *core.ServeEvent) error {
 	apiAuth.GET("/package-updates", h.getPackageUpdates)
 	// fork: top consuming containers across systems
 	apiAuth.GET("/fork/top-consumers", h.getTopConsumers)
+	// fork: what needs attention across systems
+	apiAuth.GET("/fork/attention", h.getAttention)
 	// /containers routes
 	if enabled, _ := utils.GetEnv("CONTAINER_DETAILS"); enabled != "false" {
 		// get container logs

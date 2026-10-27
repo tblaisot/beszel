@@ -122,27 +122,22 @@ F1 to F5 are front-end heavy and nearly independent. Do them first. F9 is delibe
 
 ## F6. "Needs attention" home view
 
-**Need.** A dedicated home view, as in Maintenant's dashboard: empty when all is well, otherwise a ranked list of problems, plus a few numbers and curves. Replaces the Homepage tiles that Beszel's widget cannot give (absolute CPU/RAM of the NAS, disk per pool, list of problems, some curves).
+**Need.** A view that answers "is everything OK?" at a glance, as Maintenant's dashboard does: empty when all is well, otherwise a ranked list of problems, plus a few numbers. It replaces the Homepage tiles that Beszel's widget cannot give (absolute CPU/RAM of the host, disk per pool, a list of problems).
 
-**Problems to list** (all computed from data the hub already holds, no new collection):
-- system down or alert triggered (status);
-- network monitor failing (F1 name, F2 uptime bar);
-- ZFS pool not `ONLINE`, SMART device not passing;
-- systemd unit failed;
-- container unhealthy, restarting, or exited unexpectedly;
-- container image update available (existing upstream flag);
-- active alerts from the alerts-history.
+**Change (as built).**
+- **Hub endpoint** `GET /api/beszel/fork/attention` (auth required, new file `internal/hub/fork_attention.go`, one route line in `api.go`; the helpers `accessibleSystemIDs` and `inClause` moved to `fork_access.go`). It reads what the hub already stores, only for the systems the user may read, and returns `items`, `counts` and an `overview`. No new collection.
+- **Problems listed**, critical first:
+  - *critical*: a system that is down; a network monitor that is not responding (only monitors of systems that are up and have run at least once); a ZFS pool that is not `ONLINE` or `DEGRADED`; a S.M.A.R.T. device `FAILED`; a failed systemd service.
+  - *warning*: a triggered alert (the `Status` alert is skipped, the down system already has its item); a `DEGRADED` pool; a S.M.A.R.T. `WARNING`; a container that is unhealthy, restarting, or exited with a non-zero code. Containers and units of a system that is down are ignored (stale rows).
+  - *info*: a container image update available.
+- **Overview numbers:** monitors up / total and uptime, average response of monitors that are up, systems up / total, updates available, **hosts** (systems that other systems name as their parent in F3, with CPU in cores used / total and memory used / total), and **storage pools** with used share and health.
+- **UI:** a new route `/attention` and a bell icon with a red count of critical plus warning items in the navbar (desktop icon and mobile menu entry). The page has a banner (red, yellow, or green "Everything is OK"), the problem list (severity dot, name, type badge, reason, system, age, link to the matching page), the overview tiles, hosts, and pools. One request a minute while the page is visible, shared between the badge and the page.
+- **Server route list:** `isAppRoute` in `internal/hub/server.go` must list `/attention`, or a direct load answers 404 (found while testing).
+- **Not included (deliberately):** small curves of the host (CPU, memory, temperature, network); the system page has them and they would need a second data path. A setting to make this the landing page: it is an extra nav entry for now. A Homepage-embeddable view: the endpoint needs a user token, so a widget would need a token or a proxy.
 
-**Layout** (see `inspiration/` Dashboard screenshot).
-- Top banner: "N need attention", counts by severity (incident / warning / OK).
-- "Needs attention" list: severity dot, name, type badge (SYSTEM, MONITOR, ZFS, SMART, UNIT, CONTAINER, UPDATE), one-line reason, age, link to the relevant page.
-- Overview tiles: global uptime (monitors up / total), average response time, NAS CPU and memory (F3 absolute), disk used per pool (`fast`, `tank1`, `tank2`, NVMe), updates (available / up to date).
-- A few curves for the NAS (CPU, memory, temperature, network, last hours) reusing existing chart components.
-- Entry point: new route and nav item, optionally set as the default landing page by a setting. The current home table stays as it is.
+**Touchpoints (upstream files).** `internal/hub/api.go` (one route line), `internal/hub/server.go` (one route in the list), `components/router.tsx` (one route), `main.tsx` (lazy import and one branch), `components/navbar.tsx` (import and two elements), `en.po`. New: `internal/hub/fork_attention.go`, `fork_access.go` (+ tests), `src/fork/attention-page.tsx`, `attention-nav.tsx`, `use-attention.ts`.
 
-**Touchpoints.** `router.tsx`, `navbar.tsx` (one entry each). All logic in new `fork/attention/*` and optionally `internal/hub/fork_attention.go` if one aggregated endpoint is cheaper than several client queries. Must also work as a compact page that Homepage can embed (iframe) or read through one JSON endpoint (`/api/fork/attention`), so the widget need is met without a Homepage plugin.
-
-**Done when.** With one monitor down and one container unhealthy the list shows exactly those two, sorted by severity, and it is empty (with the OK counters) otherwise.
+**Checked on a copy of the production DB** with seeded problems (a down system, failing monitors, a failed SMART device, a degraded pool, a failed unit, an unhealthy and a restarting container, image updates): 16 items in the right order and severities, badge count 14, mobile layout, and the green all-clear state. Go tests cover the rules (`buildAttention`), the endpoint's user scoping, and the route list.
 
 ## Write actions (F7 and F8)
 
@@ -242,4 +237,3 @@ Baseline (checked before the first fork change): all Go packages pass, 48 fronte
 
 - F9: upstream's config sync deletes systems missing from `config.yml`; decide whether the fork keeps that for systems (yes by default) while never deleting alerts/monitors.
 - F8: whether the SSH transport can carry a streaming action, or WebSocket-only agents get the console.
-- Whether F6 becomes the default landing page, or stays an extra nav entry.
