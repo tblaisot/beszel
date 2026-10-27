@@ -234,6 +234,9 @@ func (am *AlertManager) evaluateNetworkMonitorAlerts(app core.App, systemID stri
 					if m.GetString("protocol") == "tcp" {
 						label = net.JoinHostPort(label, strconv.Itoa(m.GetInt("port")))
 					}
+					if name := m.GetString("name"); name != "" {
+						label = name
+					}
 					if obs.triggered {
 						collection, err := tx.FindCachedCollectionByNameOrId("alerts_history")
 						if err != nil {

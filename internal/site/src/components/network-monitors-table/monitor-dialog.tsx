@@ -36,6 +36,7 @@ type MonitorProtocol = "icmp" | "tcp" | "http" | "dns"
 
 type MonitorValues = {
 	system: string
+	name?: string
 	target: string
 	protocol: MonitorProtocol
 	port: number
@@ -60,6 +61,7 @@ const MonitorIntervalSchema = v.pipe(v.string(), v.toNumber(), v.minValue(1), v.
 // defaults and HTTP target normalization stay in one place.
 const NormalizedMonitorValuesSchema = v.pipe(
 	v.object({
+		name: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(100)), ""),
 		target: v.pipe(v.string(), v.trim(), v.nonEmpty("target is required")),
 		protocol: MonitorProtocolSchema,
 		port: v.number(),
@@ -79,6 +81,7 @@ const NormalizedMonitorValuesSchema = v.pipe(
 			port = 443
 		}
 		return {
+			name: input.name,
 			// HTTP monitors may be entered as bare hostnames, so normalize them to a
 			// scheme-bearing URL before the payload is sent to PocketBase.
 			target: protocol === "http" ? httpTarget : input.target,
@@ -732,6 +735,7 @@ function MonitorDialogContent({
 	onOpenBulkAdd?: (selectedSystemIds: Set<string>) => void
 }) {
 	const [protocol, setProtocol] = useState<MonitorProtocol>(monitor?.protocol ?? "icmp")
+	const [name, setName] = useState(monitor?.name ?? "")
 	const [target, setTarget] = useState(monitor?.target ?? "")
 	const [port, setPort] = useState(monitor?.protocol === "tcp" && monitor.port ? String(monitor.port) : "")
 	const [server, setServer] = useState(monitor?.protocol === "dns" ? (monitor.server ?? "") : "")
@@ -755,6 +759,7 @@ function MonitorDialogContent({
 		}
 
 		setProtocol(monitor?.protocol ?? "icmp")
+		setName(monitor?.name ?? "")
 		setTarget(monitor?.target ?? "")
 		setPort(monitor?.protocol === "tcp" && monitor.port ? String(monitor.port) : "")
 		setServer(monitor?.protocol === "dns" ? (monitor.server ?? "") : "")
@@ -776,6 +781,7 @@ function MonitorDialogContent({
 			const payload = buildMonitorPayload(
 				{
 					system: targetSystems[0],
+					name,
 					target,
 					protocol,
 					port: protocol === "tcp" ? Number(port) : 0,
@@ -854,6 +860,12 @@ function MonitorDialogContent({
 						</Select>
 					</div>
 				)}
+				<div className="grid gap-2">
+					<Label>
+						<Trans>Name</Trans>
+					</Label>
+					<Input value={name} onChange={(e) => setName(e.target.value)} maxLength={100} placeholder={t`Optional`} />
+				</div>
 				<div className="grid gap-2">
 					<Label>
 						<Trans>Target</Trans>

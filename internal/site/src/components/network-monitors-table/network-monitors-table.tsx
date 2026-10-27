@@ -289,7 +289,7 @@ export default function NetworkMonitorsTableNew({
 			const systemName = $allSystemsById.get()[monitor.system]?.name ?? ""
 			// Include the raw target so searches for the hidden URL scheme still match.
 			const searchString =
-				`${getMonitorTarget(monitor)}${monitor.target}${monitor.protocol}${systemName}`.toLocaleLowerCase()
+				`${monitor.name ?? ""}${getMonitorTarget(monitor)}${monitor.target}${monitor.protocol}${systemName}`.toLocaleLowerCase()
 			return matchesFilterGroups(searchString, parseFilterGroups(value))
 		},
 	})
