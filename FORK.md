@@ -24,7 +24,7 @@ Heartbeats (cron dead man's switch), security posture and CVE scanning, compose-
 | F2 | Uptime history column on the monitors table | S | low | ⬆ |
 | F3 | Absolute / host-relative CPU and memory | M | low | ⬆ (toggle) |
 | F4 | Top consumers chart | M | low | maybe |
-| F5 | CPU frequency, fan check | S | low | ⬆ |
+| F5 | CPU frequency chart | S | low | ⬆ |
 | F6 | "Needs attention" home view | M | low | no |
 | F7 | Container and service start/stop/restart | M | high | no |
 | F8 | Container console (exec) | L | high | no |
@@ -99,18 +99,22 @@ F1 to F5 are front-end heavy and nearly independent. Do them first. F9 is delibe
 
 **Done when.** The card ranks containers across all systems in under a second with 17 systems, and the order matches the sorted column in the table for the 1 h window.
 
-## F5. CPU frequency and fan check ⬆
+## F5. CPU frequency ⬆
 
-**Need.** The old NAS dashboard had CPU frequency (Hz) and fan rpm. The study found neither in the hub stats.
+**Need.** The old NAS dashboard had a CPU frequency chart; the hub stats have none.
+
+**Host check (done on the NAS, intel i3-N305, `intel_pstate`).**
+- **Fans: nothing to fix.** The hardware exposes no `fan*_input` to Linux (no Super-I/O driver finds a chip, no BMC; the ACPI "Fan" cooling devices are on/off states, not RPM) and the agent's sandbox does not hide anything. Upstream's `agent/fans.go` is correct and simply has nothing to read, so the fork does nothing for fans on this host. An optional chart of the ACPI fan cooling state is not worth adding (always 0 here).
+- **CPU frequency is available** without privileges: per CPU `scaling_cur_freq` (kHz, varies with load) and `cpuinfo_avg_freq`; `cpuinfo_max_freq` for the ceiling. `cpuinfo_cur_freq` does not exist with `intel_pstate`, so it must not be required.
 
 **Change.**
-- **Fans:** upstream already has `agent/fans.go` and a `Fans` field (`f`) in system stats. First verify on the NAS why it reports nothing (board exposes no fan, or sensor filtering). If it is a filter or config issue, document the env var; if it is a real gap, fix it in a new file.
-- **CPU frequency:** add current (and optionally max) frequency per system from `/sys/devices/system/cpu/cpu*/cpufreq` (Linux only, stub elsewhere), as a new optional stats key and a small chart on the system page.
-- Optional and cheap: one sysfs read per collection, no goroutine.
+- Agent: read `/sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq` (fall back to `cpuinfo_avg_freq`), report the average and the maximum across CPUs in MHz as a new optional stats key, plus `cpuinfo_max_freq` as the ceiling. Linux only, stub elsewhere, omitted when cpufreq is absent (VMs, containers).
+- UI: one small chart on the system page, shown only when the data exists.
+- One sysfs read per CPU per collection, no goroutine.
 
-**Touchpoints.** `internal/entities/system/system.go` (one new field), `agent/system.go` or equivalent collector hook-up, `system.tsx` (chart), `chart-data.ts`. New `agent/fork_cpu_freq_linux.go` and `agent/fork_cpu_freq_other.go`.
+**Touchpoints.** `internal/entities/system/system.go` (one new field), the agent's system-stats collector (one call), `system.tsx` and `chart-data.ts` (chart). New `agent/fork_cpu_freq_linux.go`, `agent/fork_cpu_freq_other.go`, test with fake sysfs fixtures.
 
-**Done when.** The NAS system page shows a CPU frequency chart; fans appear when the hardware exposes them, with the reason documented when it does not.
+**Done when.** The NAS system page shows a CPU frequency chart that follows load; a host without cpufreq shows no chart and no error.
 
 ## F6. "Needs attention" home view
 
@@ -218,8 +222,8 @@ Baseline (checked before the first fork change): all Go packages pass, 48 fronte
 - **Go:** `make test` (needs an `internal/site/dist/index.html`; `touch` an empty one, as `make dev-hub` does). One package: `go test -tags='testing no_ui' ./internal/hub/... -run TestX`.
 - **Frontend:** in `internal/site`, `bun install` then `bun test` (uses `bunfig.toml`, which preloads a `localStorage` stub because the store modules read it at import time).
 - **Lint and types:** `golangci-lint run`; in `internal/site` `bun run build` (Lingui + `tsc -b` + Vite).
-- **Real data:** copy a hub `data.db` into a dev hub (`make dev-hub`) to check F1 to F6 on real systems and monitors. F7 and F8 need a Linux VM with Docker, systemd and an agent with `FORK_ACTIONS` set.
-- **F5 (fans, CPU frequency):** the host check is described in `FAN_TEST_NEEDS.md` and handled by a separate agent; its answer decides the F5 scope.
+- **Real data:** a copy of the production hub DB lives in `local/beszel-data/data.db`. `/local/` is excluded in `.git/info/exclude` and must never be committed (it holds the user record, password hash and hub settings). `local/fan-check/` holds the host-check notes. Work on a copy (`cp -r`), create a throwaway superuser with `beszel superuser upsert`, run `beszel serve --dir <copy> --http 127.0.0.1:8099`, and time the API calls with `curl`, to check F1 to F6 on real systems and monitors. F7 and F8 need a Linux VM with Docker, systemd and an agent with `FORK_ACTIONS` set.
+- **F5 (CPU frequency):** the host check was done on the NAS (see F5); use fake sysfs fixtures for the unit tests.
 - **Security checks (F7, F8):** non-admin refused, agent without `FORK_ACTIONS` refused, units outside `SERVICE_PATTERNS` refused, exec session closes on disconnect.
 
 ## Rebase and test checklist
@@ -232,8 +236,6 @@ Baseline (checked before the first fork change): all Go packages pass, 48 fronte
 
 ## Open items to settle while implementing
 
-- F2: time the stats fetch on the real `data.db` (37 monitors) and tune the window / segment size if needed; retention was checked (`20m` kept 24 h).
-- F5: why the NAS reports no fans (hardware, or filtered).
 - F9: upstream's config sync deletes systems missing from `config.yml`; decide whether the fork keeps that for systems (yes by default) while never deleting alerts/monitors.
 - F8: whether the SSH transport can carry a streaming action, or WebSocket-only agents get the console.
 - Whether F6 becomes the default landing page, or stays an extra nav entry.
