@@ -32,6 +32,7 @@ import { $router, basePath, Link, navigate } from "./router"
 import { DropdownMenu, DropdownMenuTrigger } from "./ui/dropdown-menu"
 import { AppleIcon, DockerIcon, FreeBsdIcon, TuxIcon, WindowsIcon } from "./ui/icons"
 import { InputCopy } from "./ui/input-copy"
+import { ParentHostField } from "@/fork/usage-columns"
 
 // To avoid a refactor of the dialog, we will just keep this function as a "skeleton" for the actual dialog
 export function AddSystemDialog({ open, setOpen }: { open: boolean; setOpen: (open: boolean) => void }) {
@@ -213,6 +214,7 @@ export const SystemDialog = ({ setOpen, system }: { setOpen: (open: boolean) => 
 							required={!isUnixSocket}
 							className={cn(isUnixSocket && "hidden")}
 						/>
+						<ParentHostField system={system} />
 						<Label htmlFor="pkey" className="xs:text-end whitespace-pre">
 							<Trans comment="Use 'Key' if your language requires many more characters">Public Key</Trans>
 						</Label>

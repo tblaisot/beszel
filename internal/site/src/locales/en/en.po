@@ -92,6 +92,10 @@ msgstr "{totalCount, plural, one {# service} other {# services}}"
 msgid "{value, plural, one {# day} other {# days}}"
 msgstr "{value, plural, one {# day} other {# days}}"
 
+#: src/fork/usage-columns.tsx
+msgid "% of host"
+msgstr "% of host"
+
 #: src/lib/utils.ts
 msgid "1 hour"
 msgstr "1 hour"
@@ -130,6 +134,10 @@ msgstr "30 days"
 #: src/components/routes/system/charts/load-average-chart.tsx
 msgid "5 min"
 msgstr "5 min"
+
+#: src/fork/usage-columns.tsx
+msgid "Absolute"
+msgstr "Absolute"
 
 #. Table column
 #: src/components/routes/settings/quiet-hours.tsx
@@ -246,13 +254,13 @@ msgstr "Are you sure?"
 msgid "Automatic copy requires a secure context."
 msgstr "Automatic copy requires a secure context."
 
-#. Package version available to install
-#: src/components/routes/system/package-updates-table.tsx
+#: src/components/routes/system/storage-pools-table.tsx
+msgctxt "Disk space available"
 msgid "Available"
 msgstr "Available"
 
-#: src/components/routes/system/storage-pools-table.tsx
-msgctxt "Disk space available"
+#. Package version available to install
+#: src/components/routes/system/package-updates-table.tsx
 msgid "Available"
 msgstr "Available"
 
@@ -667,6 +675,10 @@ msgstr "Core"
 msgid "CPU"
 msgstr "CPU"
 
+#: src/fork/usage-columns.tsx
+msgid "CPU and memory units"
+msgstr "CPU and memory units"
+
 #: src/components/routes/system/cpu-sheet.tsx
 msgid "CPU Cores"
 msgstr "CPU Cores"
@@ -760,6 +772,10 @@ msgstr "Cycles"
 #: src/components/routes/settings/quiet-hours.tsx
 msgid "Daily"
 msgstr "Daily"
+
+#: src/fork/usage-columns.tsx
+msgid "Default"
+msgstr "Default"
 
 #: src/components/routes/system/info-bar.tsx
 msgctxt "Default system layout option"
@@ -1509,6 +1525,7 @@ msgid "No targets found."
 msgstr "No targets found."
 
 #: src/components/routes/system/storage-pools-table.tsx
+#: src/fork/usage-columns.tsx
 msgid "None"
 msgstr "None"
 
@@ -1618,6 +1635,11 @@ msgstr "Page {0} of {1}"
 #: src/components/command-palette.tsx
 msgid "Pages / Settings"
 msgstr "Pages / Settings"
+
+#: src/fork/usage-columns.tsx
+#: src/fork/usage-columns.tsx
+msgid "Parent host"
+msgstr "Parent host"
 
 #: src/components/login/auth-form.tsx
 #: src/components/login/auth-form.tsx

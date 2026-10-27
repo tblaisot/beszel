@@ -14,13 +14,15 @@ import {
 	useReactTable,
 	type VisibilityState,
 } from "@tanstack/react-table"
-import { memo, type RefObject, useEffect, useRef, useState } from "react"
+import { memo, type RefObject, useEffect, useMemo, useRef, useState } from "react"
 import { DataTablePagination, usePagination } from "@/components/ui/data-table-pagination"
 import { Input } from "@/components/ui/input"
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { pb } from "@/lib/api"
 import type { ContainerRecord } from "@/types"
 import { containerChartCols } from "@/components/containers-table/containers-table-columns"
+import { UsageModeToggle, useResortOnChange, withContainerUsage } from "@/fork/usage-columns"
+import { useUsage } from "@/fork/use-usage"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { type ContainerHealth, ContainerHealthLabels } from "@/lib/enums"
 import { cn, useBrowserStorage } from "@/lib/utils"
@@ -122,9 +124,21 @@ export default function ContainersTable({ systemId }: { systemId?: string }) {
 		})
 	}, [])
 
+	const { mode: usageMode, caps: capacities } = useUsage()
+	useResortOnChange(setSorting)
+	const columns = useMemo(
+		() =>
+			withContainerUsage(
+				containerChartCols.filter((col) => (systemId ? col.id !== "system" : true)),
+				usageMode,
+				capacities
+			),
+		[systemId, usageMode, capacities]
+	)
+
 	const table = useReactTable({
 		data: data ?? [],
-		columns: containerChartCols.filter((col) => (systemId ? col.id !== "system" : true)),
+		columns,
 		getCoreRowModel: getCoreRowModel(),
 		getSortedRowModel: getSortedRowModel(),
 		getFilteredRowModel: getFilteredRowModel(),
@@ -188,7 +202,8 @@ export default function ContainersTable({ systemId }: { systemId?: string }) {
 							<Trans>Click on a container to view more information.</Trans>
 						</CardDescription>
 					</div>
-					<div className="relative ms-auto w-full max-w-full md:w-64">
+					<UsageModeToggle className="ms-auto" />
+					<div className="relative w-full max-w-full md:w-64">
 						<Input
 							placeholder={t`Filter...`}
 							value={globalFilter}

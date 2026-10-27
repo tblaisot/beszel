@@ -73,16 +73,19 @@ F1 to F5 are front-end heavy and nearly independent. Do them first. F9 is delibe
 
 **Need.** All figures are a percentage of the machine they run in, so a small VM or LXC looks busy (66 % of 384 MiB) and systems cannot be compared. The goal is to find the biggest RAM and CPU users across systems with one unit and a sort.
 
-**Change.**
-- **Parent host link.** Optional field `parent` (relation to `systems`) on `systems` (additive migration). A VM, LXC or container host points to the physical machine it runs on. This is a plain manual link: nothing is read from the hypervisor, so it works with Incus, Proxmox, libvirt or anything else. Host totals (cores, RAM) come from the parent's `info`/stats; fall back to the system itself when unset.
-- **Display modes**, a single toggle stored in local storage (like the shared rows-per-page setting): `% of machine` (today), `absolute` (MiB/GiB, cores or millicores), `% of host`.
-- **Where it applies:** All Systems table (CPU, Memory columns), All Containers table (CPU, Memory), and the system page headline figures. Both columns are sortable on the displayed value.
-- **Data:** system memory used is already in bytes (`mu`), container memory in MB (`m`); CPU absolute = `cpu% × cores / 100`. Container CPU is a % of its system, so absolute CPU = `cpu% × system cores / 100`. Needs the system's core count (already in system info).
-- Settings UI for the system dialog: a "Parent host" select.
+**Change (as built).**
+- **Parent host link.** Optional self-relation `parent` on `systems` (additive migration `1800000002_fork_system_parent.go`). A VM, LXC or container host points to the physical machine it runs on. This is a plain manual link: nothing is read from the hypervisor, so it works with Incus, Proxmox, libvirt or anything else. It is set with a **"Parent host" select in the system edit dialog** (saved immediately on change; not shown when adding a system, set it afterwards). Without a parent, a system is its own host.
+- **Capacities.** Cores and total memory per system come from the existing `system_details` collection, loaded once with the `parent` links (two small queries, `requestKey: null` so the PocketBase SDK never auto-cancels them or the app's own calls) into a store (`src/fork/use-usage.ts`).
+- **Mode toggle** (`Default` / `Absolute` / `% of host`, kept in local storage) next to the filter of the **All Systems** and **All Containers** tables:
+  - *Default*: exactly what upstream shows.
+  - *Absolute*: CPU as cores in use (`cpu% × system cores / 100`), memory in bytes. For systems the memory is `mp% × total`; containers already show absolute memory.
+  - *% of host*: CPU cores in use / host cores, memory bytes / host memory, where the host is the parent system (or the system itself). In the systems table the meter bar follows the value shown.
+  - Missing capacity falls back to the default cell. Columns stay sortable on the displayed value.
+- **Two traps found while testing**, both caused by memoized rows and cached sort values: cells wrap the originals and read the mode from the store themselves (rebuilt column definitions never reach rows already rendered), and sorting uses a custom `sortingFn` plus a re-sort of the table when the mode or capacities change (TanStack caches accessor values and the sorted rows).
 
-**Touchpoints.** `systems-table-columns.tsx`, `containers-table-columns.tsx`, `system/info-bar.tsx`, `add-system.tsx`/edit dialog, `types.d.ts`, one migration. Everything else in new `fork/units.ts`, `fork/use-display-mode.ts`.
+**Touchpoints (upstream files).** `systems-table.tsx` (hook, columns wrapper, toggle, re-sort: 4 small edits), `containers-table.tsx` (same), `add-system.tsx` (one field in the edit dialog). New: `src/fork/usage.ts` (+ test), `use-usage.ts`, `usage-columns.tsx`, migration and Go test.
 
-**Done when.** With the toggle on "% of host", a small system and a big one are comparable in one sorted column, and "absolute" matches `free -m` on the system itself.
+**Done when.** With the toggle on "% of host", a small system and a big one are comparable in one sorted column, and "absolute" matches the system itself. Checked on a copy of the production DB: a 3 GiB guest with 779 MB used shows 779.1 MB (absolute) and 2.45 % (host, 32 GiB parent); the container table sorts by cores in use.
 
 ## F4. Top consumers chart
 

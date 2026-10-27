@@ -54,6 +54,8 @@ import AlertButton from "../alerts/alert-button"
 import { $router, Link } from "../router"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card"
 import { SystemsTableColumns, ActionsButton, IndicatorDot } from "./systems-table-columns"
+import { UsageModeToggle, useResortOnChange, withSystemUsage } from "@/fork/usage-columns"
+import { useUsage } from "@/fork/use-usage"
 
 type ViewMode = "table" | "grid"
 type StatusFilter = "all" | SystemRecord["status"]
@@ -186,7 +188,12 @@ export default function SystemsTable() {
 		}
 	}, [filter])
 
-	const columnDefs = useMemo(() => SystemsTableColumns(viewMode), [viewMode])
+	const { mode: usageMode, caps: capacities } = useUsage()
+	useResortOnChange(setSorting)
+	const columnDefs = useMemo(
+		() => withSystemUsage(SystemsTableColumns(viewMode), usageMode, capacities),
+		[viewMode, usageMode, capacities]
+	)
 
 	const table = useReactTable({
 		data: filteredData,
@@ -257,6 +264,7 @@ export default function SystemsTable() {
 								</Button>
 							)}
 						</div>
+						<UsageModeToggle />
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
 								<Button aria-label={t`View`} variant="outline" size="icon">
