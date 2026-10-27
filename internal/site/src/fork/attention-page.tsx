@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { $allSystemsById } from "@/lib/stores"
 import { cn, decimalString, formatBytes, formatMicroseconds } from "@/lib/utils"
+import { AuditList } from "./audit-list"
 import { type AttentionItem, type AttentionSeverity, type AttentionType, useAttention } from "./use-attention"
 
 const SEVERITY_DOT: Record<AttentionSeverity, string> = {
@@ -238,6 +239,7 @@ export default memo(function AttentionPage() {
 						</ul>
 					</Card>
 				)}
+				<AuditList />
 			</div>
 			<FooterRepoLink />
 		</>

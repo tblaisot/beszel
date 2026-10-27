@@ -145,7 +145,7 @@ Shared design, because these two break Beszel's read-only model and are the main
 
 - **Off by default.** The agent only accepts an action if enabled by env, for example `FORK_ACTIONS=control,exec` (`control` = start/stop/restart of containers and services). Without it the handler returns "disabled" and the UI hides the buttons for that system (the agent reports its capabilities in the data it already sends).
 - **Admins only** in the hub: enforced server-side on the hub endpoint (PocketBase role check), not only in the UI. Optionally limited per system by a flag on the system record.
-- **Audit log.** New collection `fork_audit` (user, system, action, target, time, result; for exec: session start and end, no keystrokes). Append-only, admin-visible.
+- **Audit log.** Collection `fork_audit` (built with F7), written only by the hub and readable by admins; F8 adds its session start and end (never keystrokes).
 - **Transport.** Reuse the existing hub↔agent channel (SSH or WebSocket) and add new `common.WebSocketAction` values at the **end** of the list in `internal/common/common-ws.go` so existing values keep their numbers; register new handlers from a `fork_` file with `registry.Register(...)`. Never relax the existing fingerprint or key checks.
 - **Rebase risk.** `common-ws.go` and `agent/handlers.go` are shared with upstream: the diff there must stay at "append a constant, register a handler".
 
@@ -153,16 +153,27 @@ Shared design, because these two break Beszel's read-only model and are the main
 
 **Need.** Act on what the agent already lists, from the UI, without Portainer and without any hypervisor API. **The agent is the only bridge**: it talks to the Docker socket and to systemd on its own host, so the same code works on any machine (bare metal, VM, LXC, cloud). Nothing in the fork depends on Incus.
 
-**Change.**
-- **Containers (Docker API):** `start`, `stop`, `restart` (`POST /containers/{id}/{action}`), added to the agent's docker manager. Allowed on any container the agent can see.
-- **Services (systemd, D-Bus):** `start`, `stop`, `restart` through the dbus connection the systemd collector already opens (`StartUnit`, `StopUnit`, `RestartUnit`, mode `replace`). Restricted to the units the agent already lists, i.e. those matching `SERVICE_PATTERNS`; any other name is refused. A unit that wraps a Compose stack (for example `stack-<name>.service`, if you name them that way) is therefore a normal service, and restarting it reruns its pre-start steps; the fork has no "stack" concept of its own.
-- **Service list and logs:** upstream already has the systemd table (`systemd-table`), `GetSystemdInfo` (details) and `GetSystemdLogs` (journal lines), and container logs/info. The fork only adds the action buttons next to them. First check that the existing views show status, sub-state and the last log lines as wanted; fill any gap there (for example a state filter or more log lines) in a new file rather than changing upstream components.
-- **UI:** Start / Stop / Restart in the row menu and detail panel, with a confirmation dialog (Stop is the destructive one) and a result toast. Buttons are hidden when the agent reports the action as disabled. The audit record is written by the hub.
-- **Agent permissions:** running as root, or a polkit rule, is needed for systemd writes; the Docker socket must be writable (not mounted read-only) for container actions. Documented, not automated.
+**Decisions (agreed before building).** The agent reports what it allows in its system info and the UI follows that (the hub checks again); admin role only; an audit collection plus a small admin list; build with fakes first and verify on a real Docker and systemd machine afterwards.
 
-**Touchpoints.** `internal/common/common-ws.go` (append constants), `agent/handlers.go` (register), container and systemd detail components (render the buttons). New `agent/fork_actions.go`, `internal/hub/fork_actions.go`, `fork/action-buttons.tsx`.
+**Change (as built).**
+- **Agent (`agent/fork_actions*.go`):** a new request `common.Control` (appended to the action list, one `registry.Register` line). It is refused unless the operator set `FORK_ACTIONS=control`; the enabled actions are reported in the system info (`fa`, cbor key 28) so the hub and UI know. Kinds:
+  - *container*: `POST /containers/{id}/{start|stop|restart}` on the Docker socket, with a 60 s limit instead of the stats client's 2 s. Docker's `304` (already running or stopped) is reported as such. The id must be a 12 to 64 hex string.
+  - *service*: D-Bus `StartUnit`, `StopUnit` or `RestartUnit` (mode `replace`), waiting for the job result. The name is what the hub stores (without `.service`) and is completed to `<name>.service`. It must match `SERVICE_PATTERNS` (the default `*.service` allows every service, so narrow it), must not be a timer, socket, target, mount or other unit type, and can never be the agent's own `beszel-agent*` unit. Linux only; other platforms answer "unsupported".
+- **Hub:** `POST /api/beszel/fork/actions` with `{system, kind, target, action}` (`internal/hub/fork_actions.go`, one route line in `api.go`, admin middleware). It validates the input, requires the user to be able to read the system (404 otherwise), requires the agent to have reported `control` (403 otherwise), calls the agent, and writes one audit record for every attempt that gets past validation (`ok`, `error`, or `refused`). Errors from the agent come back as 502 with the message.
+- **Audit:** collection `fork_audit` (user, email, system, kind, target, action, result, message, time), written only by the hub, listed only for admins, kept 180 days. The *Needs attention* page has a *Recent actions* card for admins.
+- **UI:** Start / Stop / Restart buttons with a confirmation dialog and a toast, in the container detail sheet and the systemd service sheet. Shown only to admins and only for systems that report `control`.
 
-**Done when.** From the UI an admin can start, stop and restart a container and a listed service on any host; only the target changes; a non-admin, an agent without `FORK_ACTIONS`, or a unit outside `SERVICE_PATTERNS` is refused; each attempt writes one audit record.
+**Agent permissions (documented, not automated).**
+- *systemd:* an unprivileged agent is refused by polkit (`Access denied ... interactive authentication`, seen when testing as a normal user). Run the agent as root, or add a polkit rule for the agent's user and the units it may control.
+- *Docker:* the agent needs access to the Docker socket and, with `control` on, can change any container there. A read-only bind mount of the socket does not make the Docker API read-only.
+
+**Touchpoints (upstream files).** `internal/common/common-ws.go` (one constant and one request type), `internal/entities/system/system.go` (one info field), `agent/handlers.go` and `agent/agent.go` (one line each), `internal/hub/api.go` (one route line), `containers-table.tsx` and `systemd-table.tsx` (one import and one element each), `types.d.ts`, `en.po`. New: `agent/fork_actions.go`, `fork_actions_linux.go`, `fork_actions_other.go`, `internal/hub/fork_actions.go`, `fork_audit` migration, `internal/hub/systems/fork_control.go`, `src/fork/control-buttons.tsx`, `audit-list.tsx` (+ tests).
+
+**Verified.** Go tests: agent (disabled by default, input validation, Docker calls against a fake Docker API including 204, 304, 404 and 500, service allow-list), hub (401 and 403 for non-admins, 404 for systems the admin cannot read, 400 for bad input, 403 when the agent does not report `control`, success and agent error paths, audit records, audit list visibility, nobody can write the audit log). End to end with a real agent and hub on a Linux dev machine over SSH: the capability reaches the hub and the buttons, the confirmation dialog, cancelling sends nothing, an action outside `SERVICE_PATTERNS` and the agent's own unit are refused, and an unprivileged D-Bus call reports the polkit error; every outcome is in the audit log.
+
+**Not verified yet (needs a machine with Docker and systemd and a privileged agent).** A real container start, stop and restart (the dev machine has no Docker); a real service start, stop and restart (needs root or a polkit rule); the agent reconnecting after a restart of a unit it controls.
+
+**Done when.** From the UI an admin can start, stop and restart a container and a listed service on any host; only the target changes; a non-admin, an agent without `FORK_ACTIONS`, or a unit outside `SERVICE_PATTERNS` is refused; each attempt writes one audit record. (The first clause is the part still waiting for the test VM.)
 
 ## F8. Container console (exec)
 

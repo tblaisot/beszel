@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input"
 import { LogsDisplay, LogsFullscreenDialog, LogsIconButton, LogsTimestampToggle } from "@/components/logs-display"
 import { getLogTimestampDecorations } from "@/lib/logs"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { ControlButtons } from "@/fork/control-buttons"
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { pb } from "@/lib/api"
 import { ServiceStatus, ServiceStatusLabels, type ServiceSubState, ServiceSubStateLabels } from "@/lib/enums"
@@ -513,7 +514,8 @@ function SystemdSheet({
 					</SheetTitle>
 					<SheetDescription className="sr-only">{service.name}</SheetDescription>
 				</SheetHeader>
-				<div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6">
+				<ControlButtons systemId={targetSystemId} kind="service" target={service.name} label={service.name} />
+				<div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6 mt-4">
 					{canReadLogs && (
 						<div className="min-w-0">
 							<div className="flex items-center mb-3">

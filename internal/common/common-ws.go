@@ -30,6 +30,8 @@ const (
 	GetPackageUpdates
 	// Request recent logs for a systemd service from the agent.
 	GetSystemdLogs
+	// Start, stop or restart a container or service (fork)
+	Control
 	// Add new actions here...
 )
 
@@ -90,4 +92,11 @@ type SystemdInfoRequest struct {
 
 type SystemdLogsRequest struct {
 	ServiceName string `cbor:"0,keyasint"`
+}
+
+// ControlRequest asks the agent to start, stop or restart a container or a systemd service.
+type ControlRequest struct {
+	Kind   string `cbor:"0,keyasint"` // "container" or "service"
+	Target string `cbor:"1,keyasint"` // container id or service unit name
+	Action string `cbor:"2,keyasint"` // "start", "stop" or "restart"
 }

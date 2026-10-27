@@ -171,6 +171,8 @@ func NewAgent(dataDir ...string) (agent *Agent, err error) {
 		agent.systemInfo.SystemdLogs = agent.systemdManager.logsEnabled
 	}
 
+	agent.systemInfo.Actions = forkActionsEnabled()
+
 	agent.smartManager, err = NewSmartManager()
 	if err != nil {
 		slog.Debug("SMART", "err", err)

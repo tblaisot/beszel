@@ -433,6 +433,7 @@ msgstr "Can stop"
 #: src/components/routes/settings/alerts-history-data-table.tsx
 #: src/components/routes/settings/quiet-hours.tsx
 #: src/components/systems-table/systems-table-columns.tsx
+#: src/fork/control-buttons.tsx
 msgid "Cancel"
 msgstr "Cancel"
 
@@ -997,6 +998,7 @@ msgstr "Ephemeral"
 #: src/components/routes/settings/quiet-hours.tsx
 #: src/components/routes/settings/tokens-fingerprints.tsx
 #: src/components/systemd-table/systemd-table.tsx
+#: src/fork/control-buttons.tsx
 msgid "Error"
 msgstr "Error"
 
@@ -1903,6 +1905,10 @@ msgstr "Read errors"
 msgid "Received"
 msgstr "Received"
 
+#: src/fork/audit-list.tsx
+msgid "Recent actions"
+msgstr "Recent actions"
+
 #: src/components/containers-table/containers-table.tsx
 #: src/components/logs-display.tsx
 #: src/components/logs-display.tsx
@@ -1956,6 +1962,10 @@ msgstr "Response time"
 #: src/components/network-monitors-table/network-monitors-table.tsx
 msgid "Response time monitoring from agents."
 msgstr "Response time monitoring from agents."
+
+#: src/fork/control-buttons.tsx
+msgid "Restart"
+msgstr "Restart"
 
 #: src/components/systemd-table/systemd-table.tsx
 msgid "Restarts"
@@ -2171,6 +2181,10 @@ msgstr "SMTP settings"
 msgid "Sort By"
 msgstr "Sort By"
 
+#: src/fork/control-buttons.tsx
+msgid "Start"
+msgstr "Start"
+
 #: src/components/routes/settings/quiet-hours.tsx
 #: src/components/routes/settings/quiet-hours.tsx
 msgid "Start Time"
@@ -2191,6 +2205,10 @@ msgstr "State"
 #: src/lib/alerts.ts
 msgid "Status"
 msgstr "Status"
+
+#: src/fork/control-buttons.tsx
+msgid "Stop"
+msgstr "Stop"
 
 #: src/fork/attention-page.tsx
 msgid "Storage pools"
@@ -2307,6 +2325,14 @@ msgstr "Test heartbeat"
 msgid "Test notification sent"
 msgstr "Test notification sent"
 
+#: src/fork/control-buttons.tsx
+msgid "The {kind} will stop until it is started again."
+msgstr "The {kind} will stop until it is started again."
+
+#: src/fork/control-buttons.tsx
+msgid "The action is recorded in the audit log."
+msgstr "The action is recorded in the audit log."
+
 #: src/components/routes/settings/heartbeat.tsx
 msgid "The overall status is <0>ok</0> when all systems are up, <1>warn</1> when alerts are triggered, and <2>error</2> when any system is down."
 msgstr "The overall status is <0>ok</0> when all systems are up, <1>warn</1> when alerts are triggered, and <2>error</2> when any system is down."
@@ -2318,6 +2344,10 @@ msgstr "Then log into the backend and reset your user account password in the us
 #: src/components/systems-table/systems-table-columns.tsx
 msgid "This action cannot be undone. This will permanently delete all current records for {name} from the database."
 msgstr "This action cannot be undone. This will permanently delete all current records for {name} from the database."
+
+#: src/fork/control-buttons.tsx
+msgid "This acts on the host straight away."
+msgstr "This acts on the host straight away."
 
 #: src/components/network-monitors-table/network-monitors-table.tsx
 #: src/components/routes/settings/alerts-history-data-table.tsx

@@ -213,6 +213,8 @@ func (h *Hub) registerApiRoutes(se *core.ServeEvent) error {
 	apiAuth.GET("/fork/top-consumers", h.getTopConsumers)
 	// fork: what needs attention across systems
 	apiAuth.GET("/fork/attention", h.getAttention)
+	// fork: start, stop or restart a container or service (admins)
+	apiAuth.POST("/fork/actions", h.postControl).BindFunc(requireAdminRole)
 	// /containers routes
 	if enabled, _ := utils.GetEnv("CONTAINER_DETAILS"); enabled != "false" {
 		// get container logs

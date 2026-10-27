@@ -91,6 +91,8 @@ export interface SystemInfo {
 	rdn?: string
 	/** pending package updates [total, security] (security omitted if unknown) */
 	pu?: [number, number?]
+	/** actions the agent allows, from FORK_ACTIONS (fork) */
+	fa?: string[]
 }
 
 export interface SystemStats {
