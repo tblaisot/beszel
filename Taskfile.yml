@@ -1,0 +1,158 @@
+# https://taskfile.dev - thin wrappers over the Makefile plus image tasks. Run `task` to list them.
+# Images use podman; set ENGINE=docker to use docker instead.
+version: "3"
+
+vars:
+  REGISTRY: '{{.REGISTRY | default "ghcr.io"}}'
+  OWNER: '{{.OWNER | default "tblaisot"}}'
+  # images are named <registry>/<owner>/beszel/<hub|agent>, as in upstream's workflow
+  IMAGE_PREFIX: '{{.REGISTRY}}/{{.OWNER}}/beszel'
+  TAG:
+    sh: git describe --tags --always --dirty 2>/dev/null | sed 's#/#-#g' || echo dev
+  ENGINE: '{{.ENGINE | default "podman"}}'
+  PLATFORMS: '{{.PLATFORMS | default "linux/amd64"}}'
+
+tasks:
+  default:
+    silent: true
+    cmds:
+      - task --list
+
+  # ---- build -------------------------------------------------------------
+  build:
+    desc: Build the web UI, hub and agent into ./build
+    cmds:
+      - make build
+
+  build-hub:
+    desc: Build the hub (with the web UI) into ./build
+    cmds:
+      - make build-hub
+
+  build-agent:
+    desc: Build the agent into ./build
+    cmds:
+      - make build-agent
+
+  build-go:
+    desc: Build both Go binaries without the web UI (SKIP_WEB=true)
+    cmds:
+      - make build SKIP_WEB=true
+
+  clean:
+    desc: Remove build output
+    cmds:
+      - make clean
+
+  # ---- quality -----------------------------------------------------------
+  test:
+    desc: Go tests (add -- -run Name ./pkg to narrow)
+    cmds:
+      - go test -tags='testing no_ui' {{if .CLI_ARGS}}{{.CLI_ARGS}}{{else}}./...{{end}}
+
+  test-race:
+    desc: Go tests with the race detector
+    cmds:
+      - go test -race -tags='testing no_ui' ./...
+
+  test-web:
+    desc: Frontend tests and type-check
+    dir: internal/site
+    cmds:
+      - bun test
+      - bunx tsc -b
+
+  lint:
+    desc: golangci-lint and Biome
+    cmds:
+      - golangci-lint run
+      - cd internal/site && bunx biome check src
+
+  check:
+    desc: Everything CI should pass (lint, Go tests, frontend tests)
+    cmds:
+      - task: lint
+      - task: test
+      - task: test-web
+
+  # ---- run ---------------------------------------------------------------
+  dev:
+    desc: Vite, hub (:8090) and agent in watch mode (KEY="..." task dev)
+    cmds:
+      - make -j dev
+
+  run-hub:
+    desc: Run the built hub on :8090 with its data in ./local/beszel-data
+    deps: [build-hub]
+    cmds:
+      - ./build/beszel_{{OS}}_{{ARCH}} serve --http=0.0.0.0:8090 --dir=./local/beszel-data
+
+  # ---- container images (podman) -------------------------------------------
+  image-hub:
+    desc: Build the hub image
+    # the Dockerfile copies the source tree, so the embedded UI must be built first
+    deps: [web]
+    cmds:
+      - >-
+        {{.ENGINE}} build --platform {{.PLATFORMS}}
+        -f internal/dockerfile_hub
+        -t {{.IMAGE_PREFIX}}/hub:{{.TAG}} -t {{.IMAGE_PREFIX}}/hub:latest .
+
+  image-agent:
+    desc: Build the agent image
+    cmds:
+      - >-
+        {{.ENGINE}} build --platform {{.PLATFORMS}}
+        -f internal/dockerfile_agent
+        -t {{.IMAGE_PREFIX}}/agent:{{.TAG}} -t {{.IMAGE_PREFIX}}/agent:latest .
+
+  images:
+    desc: Build the hub and agent images
+    cmds:
+      - task: image-hub
+      - task: image-agent
+
+  web:
+    internal: true
+    sources: [internal/site/src/**/*, internal/site/package.json]
+    generates: [internal/site/dist/index.html]
+    cmds:
+      - make build-web-ui
+
+  # ---- registry ----------------------------------------------------------
+  login:
+    desc: Log in to the registry (needs GITHUB_TOKEN with write:packages; GITHUB_USER defaults to OWNER)
+    preconditions:
+      - sh: test -n "$GITHUB_TOKEN"
+        msg: Set GITHUB_TOKEN to a token with the write:packages scope
+    cmds:
+      - echo "$GITHUB_TOKEN" | {{.ENGINE}} login {{.REGISTRY}} -u "${GITHUB_USER:-{{.OWNER}}}" --password-stdin
+
+  # Builds one manifest list per image (all PLATFORMS) and pushes it with its :TAG and :latest names.
+  push:
+    desc: Build and push multi-arch hub and agent images (PLATFORMS=linux/amd64,linux/arm64 to change)
+    deps: [web, login]
+    cmds:
+      - task: push-image
+        vars: { NAME: hub }
+      - task: push-image
+        vars: { NAME: agent }
+
+  push-hub:
+    desc: Build and push only the hub image
+    deps: [web, login]
+    cmds:
+      - task: push-image
+        vars: { NAME: hub }
+
+  push-image:
+    internal: true
+    vars:
+      REF: '{{.IMAGE_PREFIX}}/{{.NAME}}'
+    cmds:
+      - '{{.ENGINE}} manifest rm {{.REF}}:{{.TAG}} 2>/dev/null || true'
+      - >-
+        {{.ENGINE}} build --platform {{.PLATFORMS}}
+        -f internal/dockerfile_{{.NAME}} --manifest {{.REF}}:{{.TAG}} .
+      - '{{.ENGINE}} manifest push --all {{.REF}}:{{.TAG}} docker://{{.REF}}:{{.TAG}}'
+      - '{{.ENGINE}} manifest push --all {{.REF}}:{{.TAG}} docker://{{.REF}}:latest'
