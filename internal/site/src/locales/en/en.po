@@ -544,6 +544,10 @@ msgstr "Click on a system to view more information."
 msgid "Click to copy"
 msgstr "Click to copy"
 
+#: src/fork/top-consumers.tsx
+msgid "Collapse"
+msgstr "Collapse"
+
 #: src/components/login/forgot-pass-form.tsx
 #: src/components/login/forgot-pass-form.tsx
 msgid "Command line instructions"
@@ -672,6 +676,7 @@ msgstr "Core"
 #: src/components/containers-table/containers-table-columns.tsx
 #: src/components/systemd-table/systemd-table-columns.tsx
 #: src/components/systems-table/systems-table-columns.tsx
+#: src/fork/top-consumers.tsx
 msgid "CPU"
 msgstr "CPU"
 
@@ -986,6 +991,10 @@ msgstr "Existing systems not defined in <0>config.yml</0> will be deleted. Pleas
 #: src/components/systemd-table/systemd-table.tsx
 msgid "Exited active"
 msgstr "Exited active"
+
+#: src/fork/top-consumers.tsx
+msgid "Expand"
+msgstr "Expand"
 
 #: src/components/alerts-history-columns.tsx
 #: src/components/network-monitors-table/network-monitors-columns.tsx
@@ -1375,6 +1384,7 @@ msgstr "Max 1h"
 #: src/components/systemd-table/systemd-table-columns.tsx
 #: src/components/systemd-table/systemd-table.tsx
 #: src/components/systems-table/systems-table-columns.tsx
+#: src/fork/top-consumers.tsx
 msgid "Memory"
 msgstr "Memory"
 
@@ -2257,6 +2267,10 @@ msgstr "Throughput of storage pool {displayName}"
 msgid "Time format"
 msgstr "Time format"
 
+#: src/fork/top-consumers.tsx
+msgid "Time period"
+msgstr "Time period"
+
 #: src/components/routes/settings/notifications.tsx
 msgid "To email(s)"
 msgstr "To email(s)"
@@ -2288,6 +2302,10 @@ msgstr "Tokens allow agents to connect and register. Fingerprints are stable ide
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Tokens and fingerprints are used to authenticate WebSocket connections to the hub."
 msgstr "Tokens and fingerprints are used to authenticate WebSocket connections to the hub."
+
+#: src/fork/top-consumers.tsx
+msgid "Top consumers"
+msgstr "Top consumers"
 
 #: src/components/ui/chart.tsx
 #: src/components/ui/chart.tsx

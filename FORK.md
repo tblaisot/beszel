@@ -89,18 +89,18 @@ F1 to F5 are front-end heavy and nearly independent. Do them first. F9 is delibe
 
 ## F4. Top consumers chart
 
-**Need.** Grafana's "RAM by container / CPU by stack, top 15 across systems" and Maintenant's *Top consumers* (CPU or memory, 1 h to 90 d ranked bars).
+**Need.** Grafana's "RAM by container / CPU by stack, top 15 across systems" and Maintenant's *Top consumers* (CPU or memory, ranked bars over a window).
 
-**Change.**
-- A card on the Containers page (and reusable on F6's home view): ranked horizontal bars, switch CPU / Memory, window 1 h / 6 h / 24 h / 7 d / 30 d (limited by Beszel's retention: 1 m points for 1 h, then averages to 30 d), unit follows the F3 display mode.
-- Aggregation: average over the window of each container's latest `container_stats` records. Prefer a **hub endpoint** (custom route registered from a `fork_` file) that returns the top N already aggregated, instead of the browser pulling every record of every system. Cost must stay a bounded query.
-- Click a bar opens the container detail.
+**Change (as built).**
+- **Hub endpoint** `GET /api/beszel/fork/top-consumers?metric=cpu|memory&window=1h|12h|24h|1w|30d&limit=10` (auth required, limit 1 to 50, new file `internal/hub/fork_top_consumers.go`, one route line in `api.go`). It reads the `container_stats` tier that covers the window (`1m`, `10m`, `20m`, `120m`, `480m`: the retention tiers), only for the systems the user may read (members, or everyone with `SHARE_ALL_SYSTEMS`; superusers see all), averages each container over the records it appears in, and **ranks by absolute usage**: cores in use (`cpu% × system cores`, cores from `system_details`) for CPU, MiB for memory. This makes containers of differently sized systems comparable. The reply is about 1 KB.
+- **UI:** a collapsible *Top consumers* card above the All Containers table: CPU / Memory buttons, a time window select, ten ranked bars with container, system, and value, refreshed every minute while the page is visible. Choices are kept in local storage. The value follows the F3 mode; the *Default* mode shows absolute values here (cores, bytes), because the ranking is absolute.
+- **Not included:** a time-series overlay of all systems on one chart (Grafana style); noted as a possible later step.
 
-**Not included.** A time-series overlay of all systems on one chart (Grafana style); noted as a possible later step.
+**Touchpoints (upstream files).** `internal/hub/api.go` (one route line), `components/routes/containers.tsx` (import and one element). New: `internal/hub/fork_top_consumers.go` (+ test), `src/fork/top-consumers.tsx`.
 
-**Touchpoints.** `internal/hub/api.go` (route registration hook-up), `containers.tsx` (render the card). New `internal/hub/fork_top_consumers.go`, `fork/top-consumers.tsx`.
+**Measured on a copy of the production DB** (21 systems): the endpoint answers in under 8 ms for every window, including 30 days.
 
-**Done when.** The card ranks containers across all systems in under a second with 17 systems, and the order matches the sorted column in the table for the 1 h window.
+**Done when.** The card ranks containers across all systems, the order matches the absolute sort of the containers table, other users never see systems they cannot read (covered by a Go test), and records outside the window are ignored (covered by a Go test).
 
 ## F5. CPU frequency ⬆
 
