@@ -215,6 +215,9 @@ func (h *Hub) registerApiRoutes(se *core.ServeEvent) error {
 	apiAuth.GET("/fork/attention", h.getAttention)
 	// fork: start, stop or restart a container or service (admins)
 	apiAuth.POST("/fork/actions", h.postControl).BindFunc(requireAdminRole)
+	// fork: console in a container (admins). The ticket is minted with auth; the WebSocket proves itself with the ticket
+	apiAuth.POST("/fork/exec-ticket", h.postExecTicket).BindFunc(requireAdminRole)
+	apiNoAuth.GET("/fork/exec", h.getExec)
 	// /containers routes
 	if enabled, _ := utils.GetEnv("CONTAINER_DETAILS"); enabled != "false" {
 		// get container logs

@@ -39,7 +39,8 @@ type controlBody struct {
 }
 
 type auditEntry struct {
-	user       *core.Record
+	userID     string
+	userEmail  string
 	systemID   string
 	systemName string
 	body       controlBody
@@ -80,7 +81,7 @@ func (h *Hub) postControl(e *core.RequestEvent) error {
 	if err != nil {
 		return e.NotFoundError("", nil)
 	}
-	entry := auditEntry{user: e.Auth, systemID: body.System, systemName: record.GetString("name"), body: body}
+	entry := auditEntry{userID: e.Auth.Id, userEmail: e.Auth.GetString("email"), systemID: body.System, systemName: record.GetString("name"), body: body}
 
 	if !agentAllows(record, actionControl) {
 		entry.result, entry.message = "refused", "actions are not enabled on this system"
@@ -133,8 +134,8 @@ func writeAudit(app core.App, entry auditEntry) {
 		return
 	}
 	record := core.NewRecord(collection)
-	record.Set("user", entry.user.Id)
-	record.Set("user_email", entry.user.GetString("email"))
+	record.Set("user", entry.userID)
+	record.Set("user_email", entry.userEmail)
 	record.Set("system", entry.systemID)
 	record.Set("system_name", entry.systemName)
 	record.Set("kind", entry.body.Kind)

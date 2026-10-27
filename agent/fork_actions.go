@@ -18,7 +18,10 @@ import (
 // Actions are off by default: the agent only changes anything on its host when the operator
 // opts in with FORK_ACTIONS. "control" allows starting, stopping and restarting containers
 // and systemd services. The enabled actions are reported to the hub in the system info.
-const forkActionControl = "control"
+const (
+	forkActionControl = "control"
+	forkActionExec    = "exec" // interactive shell in a container, see fork_exec.go
+)
 
 // controlTimeout bounds one start, stop or restart. Stopping waits for the container's own grace period.
 const controlTimeout = 60 * time.Second
@@ -30,7 +33,7 @@ func parseForkActions(value string) []string {
 	var enabled []string
 	for entry := range strings.SplitSeq(value, ",") {
 		entry = strings.ToLower(strings.TrimSpace(entry))
-		if entry == forkActionControl && !slices.Contains(enabled, entry) {
+		if (entry == forkActionControl || entry == forkActionExec) && !slices.Contains(enabled, entry) {
 			enabled = append(enabled, entry)
 		}
 	}

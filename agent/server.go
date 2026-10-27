@@ -200,6 +200,10 @@ func (a *Agent) handleSSHRequest(w io.Writer, req *common.HubRequest[cbor.RawMes
 		ConnectionType: system.ConnectionTypeSSH,
 		SendResponse:   sshResponder,
 	}
+	// handlers that stream (the exec console) keep using the session after the first response
+	if stream, ok := w.(io.ReadWriter); ok {
+		ctx.Stream = stream
+	}
 
 	if handler, ok := a.handlerRegistry.GetHandler(req.Action); ok {
 		if err := handler.Handle(ctx); err != nil {

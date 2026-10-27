@@ -598,9 +598,22 @@ msgstr "Confirm password"
 msgid "Conflicts"
 msgstr "Conflicts"
 
+#: src/fork/console-dialog.tsx
+msgid "Connected. Closing this window ends the shell. The session is recorded in the audit log."
+msgstr "Connected. Closing this window ends the shell. The session is recorded in the audit log."
+
+#: src/fork/console-dialog.tsx
+msgid "Connecting..."
+msgstr "Connecting..."
+
 #: src/components/active-alerts.tsx
 msgid "Connection is down"
 msgstr "Connection is down"
+
+#: src/fork/console-dialog.tsx
+#: src/fork/console.tsx
+msgid "Console"
+msgstr "Console"
 
 #: src/lib/alerts.ts
 msgid "Container"
@@ -2138,6 +2151,10 @@ msgstr "Service Details"
 msgid "Services"
 msgstr "Services"
 
+#: src/fork/console-dialog.tsx
+msgid "Session ended"
+msgstr "Session ended"
+
 #: src/components/routes/settings/general.tsx
 msgid "Set percentage thresholds for meter colors."
 msgstr "Set percentage thresholds for meter colors."
@@ -2336,6 +2353,11 @@ msgstr "The action is recorded in the audit log."
 #: src/components/routes/settings/heartbeat.tsx
 msgid "The overall status is <0>ok</0> when all systems are up, <1>warn</1> when alerts are triggered, and <2>error</2> when any system is down."
 msgstr "The overall status is <0>ok</0> when all systems are up, <1>warn</1> when alerts are triggered, and <2>error</2> when any system is down."
+
+#. placeholder {0}: control.code
+#: src/fork/console-dialog.tsx
+msgid "The shell exited with code {0}"
+msgstr "The shell exited with code {0}"
 
 #: src/components/login/forgot-pass-form.tsx
 msgid "Then log into the backend and reset your user account password in the users table."

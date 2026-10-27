@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 
 	"github.com/fxamacker/cbor/v2"
 	"github.com/henrygd/beszel/internal/common"
@@ -26,6 +27,9 @@ type HandlerContext struct {
 	ConnectionType system.ConnectionType // Transport that carried this request
 	// SendResponse abstracts how a handler sends responses (WS or SSH)
 	SendResponse func(data any, requestID *uint32) error
+	// Stream is the open SSH session for handlers that keep talking after the first response
+	// (the exec console). Nil for WebSocket requests. (fork)
+	Stream io.ReadWriter
 }
 
 // RequestHandler defines the interface for handling specific websocket request types
@@ -61,6 +65,7 @@ func NewHandlerRegistry() *HandlerRegistry {
 	registry.Register(common.GetZfsData, &GetZfsDataHandler{})
 	registry.Register(common.GetPackageUpdates, &GetPackageUpdatesHandler{})
 	registry.Register(common.Control, &ControlHandler{})
+	registry.Register(common.Exec, &ExecHandler{})
 
 	return registry
 }

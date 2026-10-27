@@ -14,7 +14,7 @@ interface AuditRecord {
 	kind: string
 	target: string
 	action: string
-	result: "ok" | "error" | "refused"
+	result: "ok" | "error" | "refused" | "started" | "ended"
 	message: string
 }
 
@@ -63,10 +63,15 @@ export function AuditList() {
 						<span className="text-muted-foreground">
 							{record.system_name} · {record.user_email}
 						</span>
-						<Badge variant={record.result === "ok" ? "outline" : "destructive"} className="text-[10px]">
+						<Badge
+							variant={record.result === "error" || record.result === "refused" ? "destructive" : "outline"}
+							className="text-[10px]"
+						>
 							{record.result}
 						</Badge>
-						{record.result !== "ok" && <span className="text-xs text-muted-foreground truncate">{record.message}</span>}
+						{record.message && record.result !== "ok" && (
+							<span className="text-xs text-muted-foreground truncate">{record.message}</span>
+						)}
 					</li>
 				))}
 			</ul>

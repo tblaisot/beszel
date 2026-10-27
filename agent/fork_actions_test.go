@@ -18,8 +18,9 @@ import (
 func TestParseForkActions(t *testing.T) {
 	assert.Empty(t, parseForkActions(""))
 	assert.Equal(t, []string{"control"}, parseForkActions("control"))
-	assert.Equal(t, []string{"control"}, parseForkActions(" Control , control, exec, nonsense"))
-	assert.Empty(t, parseForkActions("exec"))
+	assert.Equal(t, []string{"control", "exec"}, parseForkActions(" Control , control, exec, nonsense"))
+	assert.Equal(t, []string{"exec"}, parseForkActions("exec"))
+	assert.Empty(t, parseForkActions("shell,reboot"))
 }
 
 func controlContext(t *testing.T, agent *Agent, req common.ControlRequest, sent *string) *HandlerContext {

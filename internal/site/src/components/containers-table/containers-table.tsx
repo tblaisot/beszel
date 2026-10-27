@@ -22,6 +22,7 @@ import { pb } from "@/lib/api"
 import type { ContainerRecord } from "@/types"
 import { containerChartCols } from "@/components/containers-table/containers-table-columns"
 import { UsageModeToggle, useResortOnChange, withContainerUsage } from "@/fork/usage-columns"
+import { ConsoleButton } from "@/fork/console"
 import { ControlButtons } from "@/fork/control-buttons"
 import { useUsage } from "@/fork/use-usage"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -417,8 +418,9 @@ function ContainerSheet({
 							{ContainerHealthLabels[container.health as ContainerHealth]} */}
 						</SheetDescription>
 					</SheetHeader>
-					<div className="px-3">
+					<div className="px-3 flex flex-wrap gap-2">
 						<ControlButtons systemId={container.system} kind="container" target={container.id} label={container.name} />
+						<ConsoleButton systemId={container.system} containerId={container.id} label={container.name} />
 					</div>
 					<div className="px-3 pb-3 mt-2 flex flex-col gap-3 h-full items-start">
 						<div className="flex items-center w-full">
