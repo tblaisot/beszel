@@ -202,7 +202,7 @@ Shared design, because these two break Beszel's read-only model and are the main
 
 **What upstream already does** (`internal/hub/config/config.go`): reads `config.yml` from the hub data dir; each entry of `systems:` has `name`, `host`, `port`, `token`, `users`; it creates and updates systems and **deletes systems that are no longer in the file**. It has no alerts, monitors or parent host.
 
-**Change.** Extend the same `config.yml`, with everything nested **under the system it belongs to** (the natural Beszel model: an alert and a network monitor each belong to one system):
+**Change (as built).** The same `config.yml`, with everything nested **under the system it belongs to**:
 
 ```yaml
 systems:
@@ -210,21 +210,22 @@ systems:
     host: 10.0.0.5
     users: [admin@example.com]
     parent: nas                 # F3, optional, by system name
-    alerts:                     # optional
+    prune: false                # optional, see below
+    alerts:                     # optional, one record per user of the system
       - { name: Disk, value: 80, min: 15 }
       - { name: Status }
-      - { name: SystemdFailed }
     monitors:                   # optional, network monitors run by this system's agent
       - { name: Immich, protocol: http, target: "http://10.0.0.7:2283/", interval: 60 }
+      - { name: DB, protocol: tcp, target: 10.0.0.8, port: 5432, disabled: true }
 ```
 
-- Keep upstream's top-level fields and behaviour untouched; the new keys are optional, so an existing `config.yml` keeps working. The fork's parsing lives in a new file; upstream's `systemConfig` struct gets the three new optional fields (the one unavoidable upstream edit).
-- **Reconcile rules for the new keys:** create what is missing, update the declared fields, and **do not delete** alerts or monitors that are not declared (they may have been added in the UI), unless a `prune: true` is set on that system. Match alerts by `name`, monitors by `name` (F1).
-- Alert names and fields must match the hub's alert records exactly (`internal/alerts`); unknown names are logged and skipped, not fatal.
-- Secrets (hub key, admin password) stay in the environment, not in the file.
-- Reuse existing record-creation paths so the usual hooks run (for example the monitor sync to the agent).
+- Upstream's keys and behaviour are untouched; the new keys are optional, so an existing `config.yml` keeps working.
+- **Reconcile rules.** Parent: set when it differs. Alerts: matched by `name` per user of the system, created or updated (`value`, `min`). Monitors: matched by `name` within the system, created or updated (`interval`, `disabled`, `skipTlsVerify`); if the probe itself changes (protocol, target, port, server) the monitor is **recreated**, because its id is a hash of those fields upstream. Nothing is deleted unless that system sets `prune: true`, which removes the alerts and monitors of that system that are not declared. Without it, things added in the UI survive.
+- Alert names are checked against the `alerts` collection's allowed names (so new upstream alerts work without changes); an unknown name, a missing parent or an invalid entry is logged and skipped, never fatal.
+- Monitors are created through the normal record path, so the upstream hooks run (stable id, sync to the agent when it connects). The default interval is 60 s.
+- The sync runs at hub start only, as upstream's does.
 
-**Touchpoints.** `internal/hub/config/config.go` (add the optional fields to `systemConfig` and one call after systems are synced). New `internal/hub/config/fork_alerts_monitors.go`.
+**Touchpoints (upstream files).** `internal/hub/config/config.go`: one embedded struct in `systemConfig` and one call after the systems loop (5 lines). New: `fork_alerts_monitors.go` and its test.
 
 **Done when.** Starting a clean hub with a `config.yml` produces the systems with their alerts and named monitors, a second start changes nothing, and a config without the new keys behaves exactly like upstream.
 

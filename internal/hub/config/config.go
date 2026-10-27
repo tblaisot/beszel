@@ -26,6 +26,8 @@ type systemConfig struct {
 	Port  uint16   `yaml:"port,omitempty"`
 	Token string   `yaml:"token,omitempty"`
 	Users []string `yaml:"users"`
+
+	forkSystemConfig `yaml:",inline"`
 }
 
 // Syncs systems with the config.yml file
@@ -155,6 +157,8 @@ func SyncSystems(e *core.ServeEvent) error {
 			return err
 		}
 	}
+
+	syncForkExtras(h, config.Systems)
 
 	log.Println("Systems synced with config.yml")
 	return nil
