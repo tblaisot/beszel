@@ -74,6 +74,8 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import ChartTimeSelect from "@/components/charts/chart-time-select"
 import { LossChart, AvgMinMaxResponseChart, ResponseChart } from "@/components/routes/system/charts/monitors-charts"
 import { getMonitorCompareState } from "@/lib/monitor-compare"
+import { useMonitorUptime } from "@/fork/use-monitor-uptime"
+import { getUptimeColumn } from "@/fork/uptime-column"
 import { useCompareMonitors, useNetworkMonitorStats } from "@/lib/use-network-monitors"
 import { useStore } from "@nanostores/react"
 import { atom } from "nanostores"
@@ -240,16 +242,19 @@ export default function NetworkMonitorsTableNew({
 		[runMonitorBatch, toast]
 	)
 
+	const uptimeByMonitor = useMonitorUptime(useMemo(() => monitors.map((monitor) => monitor.id), [monitors]))
+
 	const columns = useMemo(() => {
 		let columns = getMonitorColumns({
 			onEdit: setEditingMonitor,
 			onDelete: handleDeleteRequest,
 			onSetEnabled: handleSetEnabled,
 		})
+		columns.splice(columns.findIndex((col) => col.id === "interval") + 1, 0, getUptimeColumn(uptimeByMonitor))
 		columns = systemId ? columns.filter((col) => col.id !== "system") : columns
 		columns = canManageMonitors ? columns : columns.filter((col) => col.id !== "actions")
 		return columns
-	}, [canManageMonitors, handleDeleteRequest, handleSetEnabled, systemId])
+	}, [canManageMonitors, handleDeleteRequest, handleSetEnabled, systemId, uptimeByMonitor])
 
 	const table = useReactTable({
 		data: monitors,

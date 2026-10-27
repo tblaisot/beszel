@@ -57,14 +57,15 @@ F1 to F5 are front-end heavy and nearly independent. Do them first. F9 is delibe
 **Change.**
 - New column **"Uptime"**, placed after Interval (before Response), with the bar and a `24h %` figure next to it. Sorting by the percentage puts the worst monitors first.
 - **Data.** Already stored: each `network_monitor_stats` record carries `success_count` and `total_count`, so the availability of a period is `success_count / total_count` and no agent or schema change is needed. Segment colour: all successes = green, some failures = orange (partial), none = red, no record = grey.
-- **Window and resolution.** Default last 24 h in about 48 segments (30 min each), built from the `10m` records (`type = "10m"`) grouped client-side; the most recent segment can use `1m` records so a fresh failure shows within a minute. The window is a constant in `fork/`, to tune after trying it.
-- **One fetch for the whole table**, not one per row: a single `getFullList` on `network_monitor_stats` with `fields: "monitor,success_count,total_count,created"` and a `created` filter over the window (about 37 monitors × 144 records for 24 h; check the cost on the 37 monitors and drop to a shorter window or the hub-side aggregate if it is heavy). Reuse `getPbTimestamp`/`chartTimeData` from `use-network-monitors.ts` rather than rewriting them.
-- **Refresh.** Re-fetch once a minute while the page is visible instead of subscribing to every stats record; the existing monitor subscription still drives the status dot.
-- **Percentage.** `24h %` = sum(success) / sum(total) over the window; empty window shows `-`.
+- **Window and resolution (as built).** 24 h in 48 segments of 30 min, aligned to now. Source records: the `20m` tier (kept 24 h upstream, 72 records per monitor) plus the `1m` tier (kept 1 h). Where a segment has `1m` records they win over the `20m` ones, so nothing is double counted and the newest segments are exact; older segments use the `20m` counts. The constants live in `src/fork/monitor-uptime.ts`.
+- **One query for the whole table**: a single `getFullList` on `network_monitor_stats` (fields `monitor,type,total_count,success_count,created`, filtered by the table's monitor ids), paged by PocketBase in batches of 1000. `20m` records cover the 24 h window; `1m` records are only fetched for the newest 30 min segment (they are fully covered there, and older ones would only add rows).
+- **Measured on a copy of the production hub DB** (42 monitors, hub on localhost): all `20m` + all `1m` of the last hour = 6 207 rows, 7 requests, 586 KB, 0.20 s; with the 30 min `1m` window above = **3 771 rows, 4 requests, 359 KB, 0.11 s**, same percentages. Building the segments in the browser takes about 0.4 ms. If it is ever too slow over a remote link, the next step is one hub endpoint returning the compact per-monitor arrays (about 20 KB).
+- **Refresh.** Re-fetch every 60 s while the page is visible (and when it becomes visible again) instead of subscribing to every stats record; the existing monitor subscription still drives the status dot.
+- **Percentage.** `24h %` = sum(success) / sum(total) over the window, shown with one decimal and never rounded up to 100 % when there was a failure; `-` when no checks are recorded. Segment colours: green all successes, yellow some failures, red all failed, grey no data. Paused monitors are dimmed.
 - Tooltip on a segment: time range, checks, failures, uptime %.
 - Optional, later: the same bar and percentage in the per-monitor chart view.
 
-**Touchpoints (upstream files).** `network-monitors-columns.tsx` (one column entry), `network-monitors-table.tsx` (call the hook once and pass the map in), `lib/use-network-monitors.ts` (export of the existing helpers only if needed). Everything else new: `fork/uptime-bar.tsx`, `fork/use-monitor-uptime.ts`, a unit test for the bucketing.
+**Touchpoints (upstream files).** `network-monitors-table.tsx` only (call the hook once, splice the column after Interval; two imports, three lines). Everything else is new under `src/fork/`: `monitor-uptime.ts` (+ test), `use-monitor-uptime.ts`, `uptime-column.tsx`.
 
 **Done when.** A monitor that failed for 5 minutes shows a red or orange segment and a 24 h percentage below 100 %; a monitor with no data shows grey; the table makes one stats request per refresh regardless of the number of rows.
 
@@ -231,7 +232,7 @@ Baseline (checked before the first fork change): all Go packages pass, 48 fronte
 
 ## Open items to settle while implementing
 
-- F2: confirm the cost of one 24 h stats fetch for all monitors, and that `10m` records are kept long enough; pick the final window and segment size after trying it.
+- F2: time the stats fetch on the real `data.db` (37 monitors) and tune the window / segment size if needed; retention was checked (`20m` kept 24 h).
 - F5: why the NAS reports no fans (hardware, or filtered).
 - F9: upstream's config sync deletes systems missing from `config.yml`; decide whether the fork keeps that for systems (yes by default) while never deleting alerts/monitors.
 - F8: whether the SSH transport can carry a streaming action, or WebSocket-only agents get the console.
