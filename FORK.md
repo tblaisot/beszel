@@ -164,7 +164,23 @@ Shared design, because these two break Beszel's read-only model and are the main
 - **UI:** Start / Stop / Restart buttons with a confirmation dialog and a toast, in the container detail sheet and the systemd service sheet. Shown only to admins and only for systems that report `control`.
 
 **Agent permissions (documented, not automated).**
-- *systemd:* an unprivileged agent is refused by polkit (`Access denied ... interactive authentication`, seen when testing as a normal user). Run the agent as root, or add a polkit rule for the agent's user and the units it may control.
+- *systemd:* an unprivileged agent is refused by polkit (`Access denied ... interactive authentication`, seen when testing as a normal user). Two ways out:
+  - run the agent as root (simple, widest); or
+  - keep the agent unprivileged and grant exactly the units it may control with a polkit rule. The agent talks to the system bus (`dbus.NewSystemConnectionContext`), and polkit asks the action `org.freedesktop.systemd1.manage-units`, whose details carry the `unit` and the `verb`:
+
+    ```js
+    // /etc/polkit-1/rules.d/50-beszel-agent.rules   (NixOS: security.polkit.extraConfig)
+    polkit.addRule(function (action, subject) {
+      if (action.id == "org.freedesktop.systemd1.manage-units" && subject.user == "beszel") {
+        var unit = action.lookup("unit");
+        if (/^(immich|paperless|stack-.*)\.service$/.test(unit)) {
+          return polkit.Result.YES;
+        }
+      }
+    });
+    ```
+
+    Keep `SERVICE_PATTERNS` and the rule in step: the agent checks its pattern first, polkit is the second, system-level lock. A hardened unit (`NoNewPrivileges`, `ProtectSystem=strict`, `PrivateTmp`) does not prevent D-Bus calls, but `RestrictAddressFamilies` must allow `AF_UNIX` and the system bus socket (`/run/dbus/system_bus_socket`) must be reachable. This rule is **not yet verified** (needs the VM); the failure mode is the same polkit message as above, and the audit log records it as an `error`.
 - *Docker:* the agent needs access to the Docker socket and, with `control` on, can change any container there. A read-only bind mount of the socket does not make the Docker API read-only.
 
 **Touchpoints (upstream files).** `internal/hub/transport/transport.go` (one `case common.Control` in the legacy reply decoder), `internal/common/common-ws.go` (one constant and one request type), `internal/entities/system/system.go` (one info field), `agent/handlers.go` and `agent/agent.go` (one line each), `internal/hub/api.go` (one route line), `containers-table.tsx` and `systemd-table.tsx` (one import and one element each), `types.d.ts`, `en.po`. New: `agent/fork_actions.go`, `fork_actions_linux.go`, `fork_actions_other.go`, `internal/hub/fork_actions.go`, `fork_audit` migration, `internal/hub/systems/fork_control.go`, `src/fork/control-buttons.tsx`, `audit-list.tsx` (+ tests).
