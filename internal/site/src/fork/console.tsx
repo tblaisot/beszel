@@ -5,6 +5,7 @@ import { lazy, Suspense, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { isAdmin } from "@/lib/api"
 import { $allSystemsById } from "@/lib/stores"
+import { CapabilityHint } from "./capability-hint"
 
 const ConsoleDialog = lazy(() => import("./console-dialog"))
 
@@ -25,8 +26,18 @@ export function ConsoleButton({
 	const system = useStore($allSystemsById)[systemId ?? ""]
 	const [open, setOpen] = useState(false)
 
-	if (!isAdmin() || !systemId || !system?.info?.fa?.includes("exec")) {
+	if (!isAdmin() || !systemId || !system) {
 		return null
+	}
+	if (!system.info?.fa?.includes("exec")) {
+		return (
+			<CapabilityHint message={t`The console is off on this agent. Set FORK_ACTIONS=exec and restart it.`}>
+				<Button size="sm" variant="outline" disabled>
+					<TerminalIcon className="size-3.5 me-1.5" />
+					{t`Console`}
+				</Button>
+			</CapabilityHint>
+		)
 	}
 	return (
 		<>

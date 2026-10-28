@@ -2,7 +2,7 @@ import { useLingui } from "@lingui/react/macro"
 import { useStore } from "@nanostores/react"
 import { atom } from "nanostores"
 import { PlayIcon, RotateCwIcon, SquareIcon } from "lucide-react"
-import { useState } from "react"
+import { type ReactNode, useState } from "react"
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button"
 import { toast } from "@/components/ui/use-toast"
 import { isAdmin, pb } from "@/lib/api"
 import { $allSystemsById } from "@/lib/stores"
+import { CapabilityHint } from "./capability-hint"
 
 export type ControlKind = "container" | "service"
 type ControlAction = "start" | "stop" | "restart"
@@ -47,9 +48,10 @@ export function ControlButtons({
 	const [pending, setPending] = useState<ControlAction | null>(null)
 	const [busy, setBusy] = useState(false)
 
-	if (!isAdmin() || !systemId || !system?.info?.fa?.includes("control")) {
+	if (!isAdmin() || !systemId || !system) {
 		return null
 	}
+	const allowed = !!system.info?.fa?.includes("control")
 
 	const names: Record<ControlAction, string> = { start: t`Start`, stop: t`Stop`, restart: t`Restart` }
 
@@ -77,17 +79,26 @@ export function ControlButtons({
 
 	return (
 		<>
-			<div className="flex gap-2">
+			<ButtonsWrapper
+				allowed={allowed}
+				message={t`Start, stop and restart are off on this agent. Set FORK_ACTIONS=control and restart it.`}
+			>
 				{(["start", "stop", "restart"] as ControlAction[]).map((action) => {
 					const Icon = ICONS[action]
 					return (
-						<Button key={action} size="sm" variant="outline" disabled={busy} onClick={() => setPending(action)}>
+						<Button
+							key={action}
+							size="sm"
+							variant="outline"
+							disabled={busy || !allowed}
+							onClick={() => setPending(action)}
+						>
 							<Icon className="size-3.5 me-1.5" />
 							{names[action]}
 						</Button>
 					)
 				})}
-			</div>
+			</ButtonsWrapper>
 			<AlertDialog open={pending !== null} onOpenChange={(open) => !open && !busy && setPending(null)}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
@@ -117,4 +128,11 @@ export function ControlButtons({
 			</AlertDialog>
 		</>
 	)
+}
+
+function ButtonsWrapper({ allowed, message, children }: { allowed: boolean; message: string; children: ReactNode }) {
+	if (allowed) {
+		return <div className="flex gap-2">{children}</div>
+	}
+	return <CapabilityHint message={message}>{children}</CapabilityHint>
 }

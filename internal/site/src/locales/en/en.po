@@ -612,6 +612,7 @@ msgstr "Connection is down"
 
 #: src/fork/console-dialog.tsx
 #: src/fork/console.tsx
+#: src/fork/console.tsx
 msgid "Console"
 msgstr "Console"
 
@@ -2207,6 +2208,10 @@ msgstr "Start"
 msgid "Start Time"
 msgstr "Start Time"
 
+#: src/fork/control-buttons.tsx
+msgid "Start, stop and restart are off on this agent. Set FORK_ACTIONS=control and restart it."
+msgstr "Start, stop and restart are off on this agent. Set FORK_ACTIONS=control and restart it."
+
 #. Context: alert state (active or resolved)
 #: src/components/alerts-history-columns.tsx
 #: src/components/routes/settings/quiet-hours.tsx
@@ -2349,6 +2354,10 @@ msgstr "The {kind} will stop until it is started again."
 #: src/fork/control-buttons.tsx
 msgid "The action is recorded in the audit log."
 msgstr "The action is recorded in the audit log."
+
+#: src/fork/console.tsx
+msgid "The console is off on this agent. Set FORK_ACTIONS=exec and restart it."
+msgstr "The console is off on this agent. Set FORK_ACTIONS=exec and restart it."
 
 #: src/components/routes/settings/heartbeat.tsx
 msgid "The overall status is <0>ok</0> when all systems are up, <1>warn</1> when alerts are triggered, and <2>error</2> when any system is down."
