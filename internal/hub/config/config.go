@@ -18,6 +18,8 @@ import (
 
 type config struct {
 	Systems []systemConfig `yaml:"systems"`
+
+	forkConfig `yaml:",inline"`
 }
 
 type systemConfig struct {
@@ -44,6 +46,9 @@ func SyncSystems(e *core.ServeEvent) error {
 	if err != nil {
 		return fmt.Errorf("failed to parse config.yml: %v", err)
 	}
+
+	// users first: the systems below refer to them by email
+	syncForkUsers(h, config.Users)
 
 	if len(config.Systems) == 0 {
 		log.Println("No systems defined in config.yml.")

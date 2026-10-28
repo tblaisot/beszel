@@ -225,6 +225,25 @@ systems:
 - Monitors are created through the normal record path, so the upstream hooks run (stable id, sync to the agent when it connects). The default interval is 60 s.
 - The sync runs at hub start only, as upstream's does.
 
+**Users and notifications (added after the first VM test, so `beszel-enrol` is no longer needed).** A top-level `users:` list, applied **before** the systems so `users: [email]` on a system can refer to a user created in the same file:
+
+```yaml
+users:
+  - email: ops@example.com
+    role: admin                       # user | admin | readonly
+    password_env: BESZEL_OPS_PASSWORD # name of an environment variable, never the password itself
+    notifications:
+      webhooks: ["${MAILRISE_URL}"]   # shoutrrr URLs; ${VAR} is replaced from the environment
+      emails: [alerts@example.com]    # optional; Beszel defaults to the user's own address
+    settings: { unitTemp: celsius, chartTime: 12h }   # any key of the user's UI settings
+```
+
+- A missing user is created (needs `password_env`, otherwise it is skipped and logged). An existing user gets the declared role, and the password only when `password_env` is set **and** differs from the stored one (setting it every start would rotate the session tokens). Users are never deleted.
+- The user's settings record is created when missing (Beszel only creates it when someone saves settings in the UI). `notifications` and `settings` are merged into the existing settings: declared keys win, undeclared ones (columns, sort modes...) are kept. A webhook or email that refers to an unset or empty variable is dropped and logged **without its value**.
+- Beszel only delivers to private or internal webhook targets for **admin** users, so declare the user that owns a Mailrise-style target as `admin`.
+- Not covered: superusers, OAuth settings, SMTP settings.
+- Upstream touchpoints: an embedded `forkConfig` struct in `config` and one `syncForkUsers` call in `SyncSystems` (3 lines). New: `fork_users.go` and its test.
+
 **Touchpoints (upstream files).** `internal/hub/config/config.go`: one embedded struct in `systemConfig` and one call after the systems loop (5 lines). New: `fork_alerts_monitors.go` and its test.
 
 **Done when.** Starting a clean hub with a `config.yml` produces the systems with their alerts and named monitors, a second start changes nothing, and a config without the new keys behaves exactly like upstream.
