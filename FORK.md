@@ -318,7 +318,7 @@ Baseline (checked before the first fork change): all Go packages pass, 48 fronte
 
 ## Rebase and test checklist
 
-- `Taskfile.yml` wraps the Makefile (`task check` runs lint and all tests) and builds and pushes the images with podman to `ghcr.io/<owner>/beszel/{hub,agent}` (`task push`, needs `GITHUB_TOKEN`; commit first, the tag comes from `git describe`).
+- `Taskfile.yml` wraps the Makefile (`task check` runs lint and all tests) and builds and pushes the images with podman to `ghcr.io/<owner>/beszel/{beszel,beszel-agent}, the same names as docker-images.yml` (`task push`, needs `GITHUB_TOKEN`; commit first, the tag comes from `git describe`).
 - After each rebase: `make test` (`go test -tags='testing no_ui' ./...`), `golangci-lint run`, and in `internal/site` `bun run build` (includes `lingui extract/compile` and `tsc -b`).
 - New user-visible strings use Lingui macros; only English source is edited, the rest comes from upstream's Crowdin flow.
 - Each feature carries Go tests next to its `fork_*.go` file (use the existing `testing` build tag helpers) and a unit test for pure front-end helpers (`units.ts`, uptime computation).

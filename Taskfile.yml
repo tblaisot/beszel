@@ -96,7 +96,7 @@ tasks:
       - >-
         {{.ENGINE}} build --platform {{.PLATFORMS}}
         -f internal/dockerfile_hub
-        -t {{.IMAGE_PREFIX}}/hub:{{.TAG}} -t {{.IMAGE_PREFIX}}/hub:latest .
+        -t {{.IMAGE_PREFIX}}/beszel:{{.TAG}} -t {{.IMAGE_PREFIX}}/beszel:latest .
 
   image-agent:
     desc: Build the agent image
@@ -104,7 +104,7 @@ tasks:
       - >-
         {{.ENGINE}} build --platform {{.PLATFORMS}}
         -f internal/dockerfile_agent
-        -t {{.IMAGE_PREFIX}}/agent:{{.TAG}} -t {{.IMAGE_PREFIX}}/agent:latest .
+        -t {{.IMAGE_PREFIX}}/beszel-agent:{{.TAG}} -t {{.IMAGE_PREFIX}}/beszel-agent:latest .
 
   images:
     desc: Build the hub and agent images
@@ -148,7 +148,7 @@ tasks:
   push-image:
     internal: true
     vars:
-      REF: '{{.IMAGE_PREFIX}}/{{.NAME}}'
+      REF: '{{.IMAGE_PREFIX}}/{{if eq .NAME "hub"}}beszel{{else}}beszel-agent{{end}}'
     cmds:
       - '{{.ENGINE}} manifest rm {{.REF}}:{{.TAG}} 2>/dev/null || true'
       - >-
