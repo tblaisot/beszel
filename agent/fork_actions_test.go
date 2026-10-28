@@ -3,6 +3,7 @@
 package agent
 
 import (
+	"bytes"
 	"context"
 	"net"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/fxamacker/cbor/v2"
 	"github.com/henrygd/beszel/internal/common"
+	"github.com/henrygd/beszel/internal/hub/transport"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -116,4 +118,24 @@ func TestControlContainer(t *testing.T) {
 	}
 	assert.Empty(t, calls)
 	assert.Equal(t, 0, len(calls))
+}
+
+// A restart answered over SSH uses the agent's SSH response encoding; the hub must decode it as a success.
+func TestControlReplyDecodesOnTheHub(t *testing.T) {
+	t.Setenv("FORK_ACTIONS", "control")
+	const id = "abcdef123456"
+	dm := dockerFake(t, func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNoContent) })
+
+	var wire bytes.Buffer
+	ctx := controlContext(t, &Agent{dockerManager: dm}, common.ControlRequest{Kind: "container", Target: id, Action: "restart"}, new(string))
+	ctx.SendResponse = func(data any, requestID *uint32) error { // what sshResponder in server.go does
+		return cbor.NewEncoder(&wire).Encode(newAgentResponse(data, requestID))
+	}
+	require.NoError(t, (&ControlHandler{}).Handle(ctx))
+
+	var resp common.AgentResponse
+	require.NoError(t, cbor.NewDecoder(&wire).Decode(&resp))
+	var result string
+	require.NoError(t, transport.UnmarshalResponse(resp, common.Control, &result))
+	assert.Equal(t, "ok", result)
 }

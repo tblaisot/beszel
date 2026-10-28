@@ -115,6 +115,16 @@ func unmarshalLegacyResponse(resp common.AgentResponse, action common.WebSocketA
 		}
 		*d = resp.ServiceInfo
 		return nil
+	case common.Control:
+		d, ok := dest.(*string)
+		if !ok {
+			return fmt.Errorf("unexpected dest type for Control: %T", dest)
+		}
+		// the result is only informative; an empty reply still means the action succeeded
+		if resp.String != nil {
+			*d = *resp.String
+		}
+		return nil
 	case common.GetSystemdLogs:
 		d, ok := dest.(*string)
 		if !ok {

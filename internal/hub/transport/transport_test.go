@@ -53,3 +53,15 @@ func TestUnmarshalEmptySmartDataResponse(t *testing.T) {
 	assert.NotNil(t, result.Data)
 	assert.Empty(t, result.Data)
 }
+
+func TestUnmarshalControlResponse(t *testing.T) {
+	var result string
+	require.NoError(t, UnmarshalResponse(common.AgentResponse{}, common.Control, &result), "an empty reply is a success")
+	assert.Empty(t, result)
+
+	ok := "ok"
+	require.NoError(t, UnmarshalResponse(common.AgentResponse{String: &ok}, common.Control, &result))
+	assert.Equal(t, "ok", result)
+
+	assert.Error(t, UnmarshalResponse(common.AgentResponse{String: &ok}, common.Control, &struct{}{}))
+}
