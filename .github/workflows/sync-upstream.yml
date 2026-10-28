@@ -1,0 +1,63 @@
+name: Sync upstream release
+
+# Scheduled workflows only run from the repository's default branch:
+# set the fork's default branch to `fork` (Settings > Branches).
+on:
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Upstream tag to rebase onto (default newest vX.Y.Z)
+        required: false
+      push:
+        description: Push the result
+        type: boolean
+        default: true
+
+concurrency: sync-upstream
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  sync:
+    if: github.repository != 'henrygd/beszel'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fork
+          fetch-depth: 0
+          # a PAT with `workflow` scope: GITHUB_TOKEN cannot push commits that touch .github/workflows
+          token: ${{ secrets.SYNC_PAT }}
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - uses: actions/setup-node@v4 # npm, to install the copilot CLI on demand
+        with:
+          node-version: 22
+
+      - id: sync
+        run: scripts/sync-upstream.sh
+        env:
+          AI: copilot # claude locally; copilot here to save cost
+          # fine-grained PAT of a Copilot-licensed user, with the "Copilot Requests" permission
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+          TARGET_TAG: ${{ inputs.tag }}
+          PUSH: ${{ inputs.push == false && 'false' || 'true' }}
+
+      - name: Open an issue when a human is needed
+        if: failure() || steps.sync.outputs.result == 'needs-review'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.sync.outputs.tag }}
+          RESULT: ${{ steps.sync.outputs.result || 'failed' }}
+        run: |
+          gh issue create --title "Upstream sync $TAG: $RESULT" --label sync \
+            --body "Result: **$RESULT**. Branch \`sync/$TAG\` (if pushed) holds the rebase. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            || gh issue create --title "Upstream sync $TAG: $RESULT" --body "See $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
