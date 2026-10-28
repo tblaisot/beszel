@@ -77,6 +77,7 @@ func detectRestarter() restarter {
 // Update checks GitHub for a newer release of beszel-agent, applies it,
 // fixes SELinux context if needed, and restarts the service.
 func Update(useMirror bool) error {
+	refuseIfForkUpdatesDisabled()
 	exePath, _ := os.Executable()
 
 	dataDir, err := GetDataDir()

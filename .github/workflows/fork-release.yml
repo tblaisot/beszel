@@ -1,0 +1,33 @@
+name: Fork release (agent binary)
+
+# Tag the fork with vX.Y.Z-fork.N (X.Y.Z = the upstream release it is based on).
+# Upstream's release.yml and docker-images.yml also match "v*"; disable "Make release and binaries"
+# in the Actions tab so only this workflow publishes the binary.
+on:
+  push:
+    tags:
+      - "v*-fork.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: github.repository != 'henrygd/beszel'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: release --clean --config .goreleaser.fork.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

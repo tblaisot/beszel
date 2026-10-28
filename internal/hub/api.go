@@ -180,7 +180,7 @@ func (h *Hub) registerApiRoutes(se *core.ServeEvent) error {
 	apiAuth.GET("/info", h.getInfo)
 	apiAuth.GET("/getkey", h.getInfo) // deprecated - keep for compatibility w/ integrations
 	// check for updates
-	if optIn, _ := utils.GetEnv("CHECK_UPDATES"); optIn == "true" {
+	if optIn, _ := utils.GetEnv("CHECK_UPDATES"); optIn == "true" && !forkUpdatesDisabled() {
 		var updateInfo UpdateInfo
 		apiAuth.GET("/update", updateInfo.getUpdate)
 	}
@@ -239,7 +239,7 @@ func (h *Hub) getInfo(e *core.RequestEvent) error {
 		Key:     h.pubKey,
 		Version: beszel.Version,
 	}
-	if optIn, _ := utils.GetEnv("CHECK_UPDATES"); optIn == "true" {
+	if optIn, _ := utils.GetEnv("CHECK_UPDATES"); optIn == "true" && !forkUpdatesDisabled() {
 		info.CheckUpdate = true
 	}
 	return e.JSON(http.StatusOK, info)

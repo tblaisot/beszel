@@ -266,6 +266,44 @@ users:
 
 ---
 
+## Releases and deployment
+
+**Update setting.** `FORK_DISABLE_UPDATE=true` (hub: also as `BESZEL_HUB_FORK_DISABLE_UPDATE`; agent: `BESZEL_AGENT_FORK_DISABLE_UPDATE`) turns off every way of updating a running binary. The hub no longer serves `/api/beszel/update` and tells the UI not to check, even if `CHECK_UPDATES=true`, so there is no "new version available" link and no request to GitHub; `beszel update` and `beszel-agent update` refuse. Reason: upstream's updater fetches `henrygd/beszel` releases and would replace a fork binary with the upstream one, without the fork's features. Off by default (upstream behaviour). Upstream touchpoints: two conditions in `internal/hub/api.go`, one line each in `internal/hub/update.go` and `agent/update.go`. The "Add system" dialog still shows upstream's `install-agent.sh` command, which also downloads upstream binaries: do not use it for the fork.
+
+**Agent binary (linux/amd64, for NixOS).**
+- Locally: `CGO_ENABLED=0 go build -ldflags "-s -w" ./internal/cmd/agent` (or `task build-agent`) gives a static binary, which runs on NixOS unpatched.
+- On GitHub: tag the fork `vX.Y.Z-fork.N` (X.Y.Z = the upstream release it is based on) and push the tag. `.github/workflows/fork-release.yml` runs GoReleaser with `.goreleaser.fork.yml` and publishes a release holding the raw `beszel-agent_linux_amd64` and `checksums.txt`. Both files are new, so upstream rebases never conflict with them.
+- `v*` tags also trigger upstream's `release.yml` (all platforms, drafts) and `docker-images.yml` (images to ghcr). Disable "Make release and binaries" in the repository's Actions tab so it does not race the fork release; leave `docker-images.yml` on if you want the hub image built per tag.
+- The workflow has not run yet (no GoReleaser on the dev machine). The first tag is its test.
+
+**NixOS example** (untested; get the hash with `nix-prefetch-url https://github.com/<owner>/beszel/releases/download/<tag>/beszel-agent_linux_amd64`):
+
+```nix
+let
+  beszel-agent = pkgs.fetchurl {
+    url = "https://github.com/<owner>/beszel/releases/download/v0.21.1-fork.1/beszel-agent_linux_amd64";
+    hash = "sha256-...";
+    executable = true;
+  };
+in {
+  systemd.services.beszel-agent = {
+    wantedBy = [ "multi-user.target" ];
+    after = [ "network-online.target" "docker.service" ];
+    environment = {
+      KEY = "ssh-ed25519 ...";                 # the hub's public key
+      FORK_ACTIONS = "control,exec";           # F7, F8
+      FORK_DISABLE_UPDATE = "true";
+    };
+    serviceConfig = {
+      ExecStart = beszel-agent;                # fetchurl output is the file itself
+      Restart = "always";
+      # root, or a polkit rule for service control (see "Agent permissions" above)
+      SupplementaryGroups = [ "docker" ];
+    };
+  };
+}
+```
+
 ## Testing
 
 Baseline (checked before the first fork change): all Go packages pass, 48 frontend tests pass, `golangci-lint` reports 66 issues that exist upstream (judge fork code by "no new issues").

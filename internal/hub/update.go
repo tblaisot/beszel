@@ -12,6 +12,7 @@ import (
 
 // Update updates beszel to the latest version
 func Update(cmd *cobra.Command, _ []string) {
+	refuseIfForkUpdatesDisabled()
 	dataDir := os.TempDir()
 
 	// set dataDir to ./beszel_data if it exists

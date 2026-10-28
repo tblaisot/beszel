@@ -1,0 +1,32 @@
+# Fork release: the agent for linux/amd64 as one static binary (runs on NixOS as is), plus checksums.
+# Used by .github/workflows/fork-release.yml; upstream's .goreleaser.yml is left untouched.
+version: 2
+
+project_name: beszel-agent
+
+builds:
+  - id: beszel-agent
+    binary: beszel-agent
+    main: internal/cmd/agent/agent.go
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w
+    goos: [linux]
+    goarch: [amd64]
+
+# the raw binary is the release asset, so a package definition can fetch it directly
+archives:
+  - id: beszel-agent
+    formats: [binary]
+    name_template: "{{ .Binary }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  disable: true
+
+release:
+  draft: false
+  prerelease: auto
